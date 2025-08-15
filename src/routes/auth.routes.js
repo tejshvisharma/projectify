@@ -5,7 +5,8 @@ import {
   verifyEmail,
   resendEmailVerification,
   logoutUser,
-  loginUser
+  loginUser,
+  getCurrentUser,
 } from "../controllers/auth.controllers.js";
 
 import {
@@ -35,6 +36,5 @@ router.route("/login").get(userLoginValidator(), loginUser);
 
 router.route("/logout").post(isLoggedIn, logoutUser);
 
-
-
+router.route("/profile").get( isLoggedIn, getCurrentUser);  
   export default router

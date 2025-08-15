@@ -289,10 +289,19 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const userProfile = await User.findById(req.user._id).select("-password");
 
-  //validation
+  if (!userProfile) {
+    throw new ApiError(401, "Didn't get the user profile");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, userProfile, "User profile fetched successfully"),
+    );
 });
+
 
 export {
   changeCurrentPassword,
