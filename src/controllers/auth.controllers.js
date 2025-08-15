@@ -1,20 +1,26 @@
 import { Mongoose } from "mongoose";
+
 import { asyncHandler } from "../utils/async-handler.js";
-import  User  from "../models/user.models.js";
-import { 
-    emailVerificationMailGenContent, 
-    forgetPasswordMailGenContent, 
-    sendEmail} from "../utils/mail.js";
 
-import  ApiResponse  from "../utils/api-response.js"
+import User from "../models/user.models.js";
+import {
+  emailVerificationMailGenContent,
+  forgetPasswordMailGenContent,
+  sendEmail,
+} from "../utils/mail.js";
 
-import  dotenv  from "dotenv";
+import ApiResponse from "../utils/api-response.js";
+
+import dotenv from "dotenv";
+
 import ApiError from "../utils/api-error.js";
-    dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
 
+import bcrypt from "bcryptjs";
 
-const registerUser = asyncHandler( async (req, res) => {
-  console.log("Post request arrived successfully at register user url");
+dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
+
+const registerUser = asyncHandler(async (req, res) => {
+
   const { email, username, password, fullName } = req.body;
 
   //validation done in middleware, after that
@@ -28,56 +34,122 @@ const registerUser = asyncHandler( async (req, res) => {
     isEmailVerified: false,
   });
 
-  // Generate verification token
+  // Generate verification token         
   const { hashedToken, unHashedToken, tokenExpiry } =
     await user.generateTemporaryToken();
 
-    //set token to database :
-    user.emailVerificationToken = hashedToken;
-    user.emailVerificationExpiry = tokenExpiry;
-    
-    // save the user in DB
-    user.save();
+  //set token to database :
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
 
-    // send verification email to user
-    const emailVerificationUrl = `http://localhost:${process.env.PORT}/api/v1/auth/verify-email?token=${unHashedToken}`;
-    const mailContent = emailVerificationMailGenContent(
-      user.username,
-      emailVerificationUrl
-    );
+  // save the user in DB
+  user.save();
 
-     sendEmail({
-       subject: "To verify Email",
-       to: user.email,
-       mailGenContent: mailContent,
-     });
-    
-    // send response after success 
-    const response = new ApiResponse(200, null, "✅ user registered successfully, check your email for verification");
-    return res.status(response.statuscode).json(response);
+  // send verification email to user
+  const emailVerificationUrl = `${process.env.API_BASE_URL}/auth/verify-email?token=${unHashedToken}`;
+  const mailContent = emailVerificationMailGenContent(
+    user.username,
+    emailVerificationUrl,
+  );
+
+  sendEmail({
+    subject: "To verify Email",
+    to: user.email,
+    mailGenContent: mailContent,
+  });
+
+  // send response after success
+  const response = new ApiResponse(
+    200,
+    null,
+    "✅ user registered successfully, check your email for verification",
+  );
+  return res.status(response.statuscode).json(response);
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const { email, password } = req.body;
 
-  //validation
+  const user = await User.findOne({ email });
+  if (!user) throw new ApiError(401, "Invalid credentials");
+
+  if (!user.isEmailVerified) {
+    throw new ApiError(403, "Please verify your email first to login", {
+      resendEmailLink: `${process.env.API_BASE_URL}/auth/resend-verification`,
+    });
+  }
+
+  const isMatch = await user.isPasswordCorrect(password);
+  if (!isMatch) throw new ApiError(401, "Invalid email or password");
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+
+  await user.save({ validateBeforeSave: false });
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  };
+
+  res.cookie("accessToken", accessToken, cookieOptions);
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        user: {
+          id: user._id,
+          username: user.username,
+          isEmailVerified: true,
+        },
+      },
+      "Login successful",
+    ),
+  );
 });
 
+
 const logoutUser = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  
+      const userId = req.user._id; 
 
-  //validation done in middleware after that 
+      // Remove refresh token from DB
+      await User.findByIdAndUpdate(userId, { $unset: { refreshToken: "" } });
 
+      // Clear cookies
+      res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
 
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, null, "logged out successfully"));
+    
+ 
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
-  
   const incomingToken = String(req.query.token || "").trim();
   if (!incomingToken) {
     throw new ApiError(400, "Token is required");
   }
-  
 
   // hash the incoming token
   const hashedIncoming = crypto
@@ -120,33 +192,55 @@ const verifyEmail = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "✅ Email verified successfully"));
 });
 
-const resendEmailVerification = asyncHandler(async (req, res, next) => {
+const resendEmailVerification = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
-  if (!email) {
-    return next(new ApiError(400, "Email is required"));
+  const user = await User.findOne({ email: email.toLowerCase() });
+
+  if (!user || user.isEmailVerified) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          null,
+          "Verification email resent. Please check your inbox.",
+        ),
+      );
   }
 
-  const user = await User.findOne({ email });
+  const coolDownMs = Number(process.env.EMAIL_RESEND_COOLDOWN_MS) || 60000;
+  const maxEmails = Number(process.env.EMAIL_RESEND_MAX_PER_DAY) || 5;
+  const countWindowMs = 24 * 60 * 60 * 1000;
 
-  if (!user) {
-    return next(new ApiError(404, "User not found"));
+  if (
+    user.lastVerificationEmailSentAt &&
+    Date.now() - user.lastVerificationEmailSentAt < coolDownMs
+  ) {
+    throw new ApiError(429, "Please wait before resending");
   }
 
-  if (user.isEmailVerified) {
-    return next(new ApiError(400, "Email already verified"));
+  if (
+    !user.firstVerificationEmailSentAt ||
+    Date.now() - user.firstVerificationEmailSentAt > countWindowMs
+  ) {
+    user.verificationEmailCount = 0;
+    user.firstVerificationEmailSentAt = Date.now();
   }
 
-  // Generate new verification token
+  if (user.verificationEmailCount >= maxEmails) {
+    throw new ApiError(429, "Max resend limit reached");
+  }
+
   const { hashedToken, unHashedToken, tokenExpiry } =
     await user.generateTemporaryToken();
-
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
-
+  user.lastVerificationEmailSentAt = Date.now();
+  user.verificationEmailCount += 1;
   await user.save();
 
-  const emailVerificationUrl = `http://localhost:${process.env.PORT}/api/v1/auth/verify-email?token=${unHashedToken}`;
+  const emailVerificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${unHashedToken}`;
   const mailContent = emailVerificationMailGenContent(
     user.username,
     emailVerificationUrl,
@@ -168,6 +262,7 @@ const resendEmailVerification = asyncHandler(async (req, res, next) => {
       ),
     );
 });
+
 
 const resetForgottenPassword = asyncHandler(async (req, res) => {
   const { email, username, password, role } = req.body;

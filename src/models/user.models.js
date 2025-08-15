@@ -3,70 +3,79 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-const userSchema = new Schema({
-    avatar:{
-        type:{
-            url:String,
-            localPath:String
-        },
-        default:{
-            url:`https://placehold.co/600x400`,
-            localPath: ""
-        }
+import dotenv from "dotenv";
+dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
+
+const userSchema = new Schema(
+  {
+    avatar: {
+      type: {
+        url: String,
+        localPath: String,
+      },
+      default: {
+        url: `https://placehold.co/600x400`,
+        localPath: "",
+      },
     },
-    username:{
-        type: String,
-        required:true,
-        lowercase:true,
-        trim:true,
-        unique:true,
-        index:true
+    username: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      unique: true,
+      index: true,
     },
-    email:{
-        type: String,
-        required:true,
-        lowercase:true,
-        trim:true,
-        unique:true,
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      unique: true,
     },
-    fullName:{
-        type: String,
-        required:true,
-        lowercase:true,
-        trim:true,
+    fullName: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
     },
-    password:{
-        type: String,
-        required: [true,"password is required"]
+    password: {
+      type: String,
+      required: [true, "password is required"],
     },
-    isEmailVerified:{
-        type: Boolean
+    isEmailVerified: {
+      type: Boolean,
     },
-    emailVerificationToken:{
-        type:String
+    emailVerificationToken: {
+      type: String,
     },
-    emailVerificationExpiry:{
-        type: Date
+    emailVerificationExpiry: {
+      type: Date,
     },
-    resetToken:{
-        type: String
+    resetToken: {
+      type: String,
     },
-    forgetPasswordToken:{
-        type:String
+    forgetPasswordToken: {
+      type: String,
     },
-    forgetPasswordExpiry:{
-        type: Date
+    forgetPasswordExpiry: {
+      type: Date,
     },
-    refreshToken:{
-        type:String
+    refreshToken: {
+      type: String,
     },
-    lastVerificationEmailSentAt:{
-        type:Date
+    firstVerificationEmailSentAt:{
+        type: Date,
     },
-    verificationEmailCount:{
-        Number
-    }
-},{timestamps:true})
+    lastVerificationEmailSentAt: {
+      type: Date,
+    },
+    verificationEmailCount: {
+      Number,
+    },
+  },
+  { timestamps: true },
+);
 
 userSchema.pre("save",async function(next){
     if (this.isModified("password")) {

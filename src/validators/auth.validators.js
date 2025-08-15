@@ -1,7 +1,7 @@
 import { body } from "express-validator";
 import User from "../models/user.models.js";
 import { availableTaskStatus, availableUserRoles } from "../utils/constants.js";
-import ApiError from "../utils/api-error.js";
+
 
 const resendVerificationValidator = ()=>{
   return [
@@ -12,12 +12,7 @@ const resendVerificationValidator = ()=>{
       .bail() // stop if empty
       .isEmail()
       .withMessage("Invalid Email, please enter valid Email")
-      .custom(async (email) => {
-        const existingUser = await User.findOne({
-          email: { $regex: `^${email}$`, $options: "i" }, // case-insensitive match
-        });
-        
-      }),
+      .toLowerCase()
   ];
 }
 const userRegistrationValidator = () => {
@@ -31,6 +26,7 @@ const userRegistrationValidator = () => {
       .isEmail()
       .withMessage("Invalid Email, please enter valid Email")
       .bail() // stop if invalid
+      .toLowerCase()
       .custom(async (email) => {
         const existingUser = await User.findOne({
           email: { $regex: `^${email}$`, $options: "i" }, // case-insensitive match
@@ -92,7 +88,8 @@ const userLoginValidator = () => {
         body('email')
             .trim()
             .notEmpty().withMessage("Email is required").bail()
-            .isEmail().withMessage("Invalid Email, please enter valid Email"),
+            .isEmail().withMessage("Invalid Email, please enter valid Email")
+            .toLowerCase(),
 
         body('password')
             .notEmpty().withMessage("password is mandatory")
@@ -112,7 +109,8 @@ const userForgotPasswordValidator = () => {
       .notEmpty()
       .withMessage("Email is required")
       .isEmail()
-      .withMessage("Email is invalid"),
+      .withMessage("Email is invalid")
+      .toLowerCase(),
   ];
 };
 
@@ -132,11 +130,14 @@ const addMemberToProjectValidator = () => {
       .trim()
       .notEmpty()
       .withMessage("Email is required")
+      .bail()
       .isEmail()
-      .withMessage("Email is invalid"),
+      .withMessage("Email is invalid")
+      .toLowerCase(),
     body("role")
       .notEmpty()
       .withMessage("Role is required")
+      .bail()
       .isIn(availableUserRoles)
       .withMessage("Role is invalid"),
   ];

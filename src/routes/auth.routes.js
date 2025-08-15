@@ -4,12 +4,19 @@ import {
   registerUser,
   verifyEmail,
   resendEmailVerification,
+  logoutUser,
+  loginUser
 } from "../controllers/auth.controllers.js";
+
 import {
   userRegistrationValidator,
   resendVerificationValidator,
+  userLoginValidator
 } from "../validators/auth.validators.js";
+
 import { validate } from "../middlewares/validate.middleware.js";
+
+import isLoggedIn from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.route("/register")
@@ -22,4 +29,12 @@ router
 router
   .route("/resend-verification")
   .post(resendVerificationValidator(), validate, resendEmailVerification);
-export default router
+
+router.route("/login").get(userLoginValidator(), loginUser);
+
+
+router.route("/logout").post(isLoggedIn, logoutUser);
+
+
+
+  export default router
