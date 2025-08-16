@@ -20,7 +20,6 @@ import bcrypt from "bcryptjs";
 dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
 
 const registerUser = asyncHandler(async (req, res) => {
-
   const { email, username, password, fullName } = req.body;
 
   //validation done in middleware, after that
@@ -34,7 +33,7 @@ const registerUser = asyncHandler(async (req, res) => {
     isEmailVerified: false,
   });
 
-  // Generate verification token         
+  // Generate verification token
   const { hashedToken, unHashedToken, tokenExpiry } =
     await user.generateTemporaryToken();
 
@@ -117,32 +116,28 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 });
 
-
 const logoutUser = asyncHandler(async (req, res) => {
-  
-      const userId = req.user._id; 
+  const userId = req.user._id;
 
-      // Remove refresh token from DB
-      await User.findByIdAndUpdate(userId, { $unset: { refreshToken: "" } });
+  // Remove refresh token from DB
+  await User.findByIdAndUpdate(userId, { $unset: { refreshToken: 1 } });
 
-      // Clear cookies
-      res.clearCookie("accessToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
+  // Clear cookies
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
 
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
 
-      return res
-        .status(200)
-        .json(new ApiResponse(200, null, "logged out successfully"));
-    
- 
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "logged out successfully"));
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
@@ -263,11 +258,41 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     );
 });
 
-
 const resetForgottenPassword = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const token = String(req.query.token || "").trim();
 
-  //validation
+  const { newPassword } = req.body;
+
+  const hashedToken = await crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    forgetPasswordToken: hashedToken,
+    forgetPasswordExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Token is invalid or has expired");
+  }
+
+  user.password = newPassword;
+  user.forgetPasswordToken = undefined;
+  user.forgetPasswordExpiry = undefined;
+
+  await user.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        null,
+        "Password has been reset successfully. Please login with new password.",
+      ),
+    );
+ 
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -277,9 +302,36 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const forgotPasswordRequest = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const { email } = req.body;
 
-  //validation
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(401, "user not found");
+  }
+
+  const { hashedToken, unHashedToken, tokenExpiry } =
+    await user.generateTemporaryToken();
+
+  user.forgetPasswordToken = hashedToken;
+  user.forgetPasswordExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+  const resetPasswordUrl = `${process.env.API_BASE_URL}/auth/reset-password?token=${unHashedToken}`;
+
+  const userName = user.username;
+
+  const mailContent = forgetPasswordMailGenContent(userName, resetPasswordUrl);
+
+  await sendEmail({
+    subject: "Reset Your Password",
+    to: user.email,
+    mailGenContent: mailContent,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Reset password email sent successfully"));
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
@@ -301,7 +353,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
       new ApiResponse(200, userProfile, "User profile fetched successfully"),
     );
 });
-
 
 export {
   changeCurrentPassword,

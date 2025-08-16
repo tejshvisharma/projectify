@@ -7,12 +7,17 @@ import {
   logoutUser,
   loginUser,
   getCurrentUser,
+  resetForgottenPassword,
+  forgotPasswordRequest,
 } from "../controllers/auth.controllers.js";
 
 import {
   userRegistrationValidator,
   resendVerificationValidator,
-  userLoginValidator
+  userLoginValidator,
+  userForgotPasswordValidator,
+  userResetForgottenPasswordValidator
+  
 } from "../validators/auth.validators.js";
 
 import { validate } from "../middlewares/validate.middleware.js";
@@ -31,10 +36,22 @@ router
   .route("/resend-verification")
   .post(resendVerificationValidator(), validate, resendEmailVerification);
 
-router.route("/login").get(userLoginValidator(), loginUser);
+router.route("/login").post(userLoginValidator(), loginUser);
 
 
 router.route("/logout").post(isLoggedIn, logoutUser);
 
 router.route("/profile").get( isLoggedIn, getCurrentUser);  
+
+router
+  .route("/forgot-password")
+  .post(userForgotPasswordValidator(), validate, forgotPasswordRequest);
+  
+router
+  .route("/reset-password")
+  .post(userResetForgottenPasswordValidator(), validate, resetForgottenPassword);
+
+
+
   export default router
+

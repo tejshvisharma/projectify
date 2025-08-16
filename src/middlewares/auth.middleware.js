@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import asyncHandler from "../utils/asyncHandler.js";
-import ApiError from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/async-handler.js";
+import ApiError from "../utils/api-error.js";
 
 const isLoggedIn = asyncHandler(async (req, res, next) => {
   console.log(req.cookies);
@@ -14,7 +14,9 @@ const isLoggedIn = asyncHandler(async (req, res, next) => {
 
 
     const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+    
     req.user = decoded; // or await User.findById(decoded.id)
+    
     next();
 
 });

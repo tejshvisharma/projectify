@@ -65,7 +65,7 @@ const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
         action: {
           instruction: `to forget your password click button below`,
           button: {
-            color: `#22B66`,
+            color: "blue",
             text: "forget your password",
             link: passwordResetUrl,
           },

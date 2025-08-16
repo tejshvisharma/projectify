@@ -108,6 +108,7 @@ const userForgotPasswordValidator = () => {
     body("email")
       .notEmpty()
       .withMessage("Email is required")
+      .bail()
       .isEmail()
       .withMessage("Email is invalid")
       .toLowerCase(),
@@ -115,7 +116,16 @@ const userForgotPasswordValidator = () => {
 };
 
 const userResetForgottenPasswordValidator = () => {
-  return [body("newPassword").notEmpty().withMessage("Password is required")];
+  return [
+    body("newPassword")
+      .notEmpty()
+      .withMessage("Password is required")
+      .bail()
+      .isStrongPassword()
+      .withMessage(
+        "Password must be at least 8 characters and include 1 lowercase, 1 uppercase, 1 number, and 1 symbol",
+      ),
+  ];
 };
 
 const createProjectValidator = () => {
