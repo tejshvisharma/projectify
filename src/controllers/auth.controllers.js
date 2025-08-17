@@ -14,8 +14,10 @@ import ApiResponse from "../utils/api-response.js";
 import dotenv from "dotenv";
 
 import ApiError from "../utils/api-error.js";
+import  jwt  from "jsonwebtoken";
 
 import bcrypt from "bcryptjs";
+import { json } from "express";
 
 dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
 
@@ -296,9 +298,68 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  
+  const incoming = req.cookies?.refreshToken;
 
-  //validation
+  if(!incoming){
+    throw new ApiError(401, "Missing refresh Token in cookies");
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(incoming, process.env.REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    // Clear cookies
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    throw new ApiError(401, "Invalid or expired refresh token");
+  }
+
+
+  const email = decoded.email;
+
+  const user = await User.findOne({ email });
+
+  if(!user){
+    throw new ApiError(401, "user not found");
+  }
+
+  if ( incoming !== user.refreshToken ) {
+    throw new ApiError(401, "Refresh token is not valid");
+   }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+
+  await user.save({ validateBeforeSave: false });
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  };
+
+  res.cookie("accessToken", accessToken, cookieOptions);
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  return res.status(200)
+          .json(new ApiResponse(200, null, "Access token refresh successfully"))
+ 
 });
 
 const forgotPasswordRequest = asyncHandler(async (req, res) => {

@@ -9,6 +9,8 @@ import {
   getCurrentUser,
   resetForgottenPassword,
   forgotPasswordRequest,
+  refreshAccessToken,
+  changeCurrentPassword
 } from "../controllers/auth.controllers.js";
 
 import {
@@ -57,6 +59,6 @@ router
   .post(userResetForgottenPasswordValidator(), validate, resetForgottenPassword);
 
 
-
+router.route("/refresh-token").post(refreshAccessToken);
   export default router
 
