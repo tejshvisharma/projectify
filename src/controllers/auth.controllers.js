@@ -292,7 +292,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
         "Password has been reset successfully. Please login with new password.",
       ),
     );
- 
+
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -335,9 +335,29 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { email, username, password, role } = req.body;
+  const { oldPassword, newPassword } = req.body;
 
-  //validation
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(400, "please log in to change password");
+  }
+
+  if (oldPassword === newPassword) {
+    throw new ApiError(400, "New password cannot be the same as old password");
+  }
+
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "please enter the correct old password");
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  return res.status(200)
+    .json(new ApiResponse(200, null, "user password changed successfully"));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {

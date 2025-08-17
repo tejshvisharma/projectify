@@ -16,7 +16,8 @@ import {
   resendVerificationValidator,
   userLoginValidator,
   userForgotPasswordValidator,
-  userResetForgottenPasswordValidator
+  userResetForgottenPasswordValidator,
+  userChangeCurrentPasswordValidator
   
 } from "../validators/auth.validators.js";
 
@@ -42,6 +43,10 @@ router.route("/login").post(userLoginValidator(), loginUser);
 router.route("/logout").post(isLoggedIn, logoutUser);
 
 router.route("/profile").get( isLoggedIn, getCurrentUser);  
+
+router
+  .route("/change-password")
+  .post(userChangeCurrentPasswordValidator(), validate, isLoggedIn, changeCurrentPassword); 
 
 router
   .route("/forgot-password")
