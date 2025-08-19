@@ -9,7 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.BASE_URL || "http://localhost:8000",
+    origin:  [process.env.BASE_URL, "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],

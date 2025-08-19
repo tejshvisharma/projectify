@@ -17,6 +17,9 @@ import ApiError from "../utils/api-error.js";
 import  jwt  from "jsonwebtoken";
 
 import bcrypt from "bcryptjs";
+
+import crypto from "crypto";
+
 import { json } from "express";
 
 dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });

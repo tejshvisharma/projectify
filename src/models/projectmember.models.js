@@ -14,10 +14,13 @@ const projectMemberSchema = new Schema({
     role:{
         type:String,
         enum:availableUserRoles,
-        default:userRolesEnum.MEMBER,
+        default:userRolesEnum.VIEWER,
         required: true
     }
 },{timestamps:true})
+
+
+projectMemberSchema.index({ user: 1, project: 1 }, { unique: true });
 
 
 export const projectMember = mongoose.model("projectMember",projectMemberSchema);

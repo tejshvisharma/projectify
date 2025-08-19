@@ -6,6 +6,10 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
 
+import { GLOBAL_ROLES } from "../utils/constants";
+
+import { GLOBAL_ROLES_LIST } from "../utils/constants";
+
 const userSchema = new Schema(
   {
     avatar: {
@@ -43,6 +47,11 @@ const userSchema = new Schema(
       type: String,
       required: [true, "password is required"],
     },
+    role: {
+      type: String,
+      enum: GLOBAL_ROLES_LIST,
+      default: GLOBAL_ROLES.USER,
+    },
     isEmailVerified: {
       type: Boolean,
     },
@@ -64,8 +73,8 @@ const userSchema = new Schema(
     refreshToken: {
       type: String,
     },
-    firstVerificationEmailSentAt:{
-        type: Date,
+    firstVerificationEmailSentAt: {
+      type: Date,
     },
     lastVerificationEmailSentAt: {
       type: Date,
