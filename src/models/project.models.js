@@ -16,7 +16,9 @@ const projectSchema = new Schema(
       required: true,
     },
     endDate: Date,
-    githubRepo: String,
+    githubRepo: {
+      type: String,
+    },
     tags: [String],
   },
   { timestamps: true },

@@ -1,8 +1,10 @@
 import { Router } from "express";
+
 import {
   isLoggedIn,
   validateProjectPermission,
 } from "../middlewares/auth.middleware.js";
+
 import {
   addProjectMember,
   deleteProjectMember,
@@ -11,8 +13,16 @@ import {
 } from "../controllers/project.controllers.js";
 
 import {
-  addProjectMemberValidator,
+  createProject,
+  getProjects,
+  updateProject,
+  deleteProject,
+} from "../controllers/project.controllers.js";
+
+import {
+  addMemberToProjectValidator,
   updateProjectMemberRoleValidator,
+  createProjectValidator,
 } from "../validators/project.validators.js";
 
 import { validate } from "../middlewares/validate.middleware.js";
@@ -20,6 +30,16 @@ import { validate } from "../middlewares/validate.middleware.js";
 import { PROJECT_ROLES } from "../utils/constants.js";
 
 const router = Router();
+
+router.route("/")
+  .post(isLoggedIn, createProjectValidator(), validate, createProject) 
+  .get(isLoggedIn, getProjects); 
+
+router
+  .route("/:projectId")
+  .put(isLoggedIn, validateProjectPermission(PROJECT_ROLES.MANAGEMENT), updateProject)
+  .delete(isLoggedIn, deleteProject);
+
 
 router
   .route("/:projectId/members")
@@ -31,7 +51,7 @@ router
   .post(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-    addProjectMemberValidator(),
+    addMemberToProjectValidator(),
     validate,
     addProjectMember,
   );
