@@ -151,7 +151,7 @@ export const deleteProjectMember = asyncHandler(async (req, res) => {
     }
 });
 
-export const createProject = asyncHandler(async () => {
+export const createProject = asyncHandler(async (req, res) => {
     const { name, description, endDate, githubRepo = "", tags = [] } = req.body;
 
     const newProject = await Project.create({
@@ -174,59 +174,57 @@ export const createProject = asyncHandler(async () => {
         .json(new ApiResponse(201, newProject, "Project created successfully"));
 });
 
-export const getProjects = asyncHandler(async () => {
-    const memberships = await ProjectMember.find({
-        user: mongoose.Types.ObjectId(req.user._id),
-    }).populate("project");
+export const getProjects = asyncHandler(async (req, res) => {
+  const memberships = await ProjectMember.find({
+    user: mongoose.Types.ObjectId(req.user._id),
+  }).populate("project");
 
-    const projects = memberships.map((m) => m.project);
+  const projects = memberships.map((m) => m.project);
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, projects, "Projects fetched successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, projects, "Projects fetched successfully"));
 });
 
-export const updateProject = asyncHandler(async () => {
-    const { projectId } = req.params;
+export const updateProject = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-    const { name, description, endDate, githubRepo, tags } = req.body;
+  const { name, description, endDate, githubRepo, tags } = req.body;
 
-    const existingProject = await Project.findById(projectId);
-    if (!existingProject) throw new ApiError(404, "Project not found");
+  const existingProject = await Project.findById(projectId);
+  if (!existingProject) throw new ApiError(404, "Project not found");
 
-    if (name) existingProject.name = name;
-    if (description) existingProject.description = description;
-    if (endDate) existingProject.endDate = endDate;
-    if (githubRepo) existingProject.githubRepo = githubRepo;
-    if (tags) existingProject.tags = tags;
+  if (name) existingProject.name = name;
+  if (description) existingProject.description = description;
+  if (endDate) existingProject.endDate = endDate;
+  if (githubRepo) existingProject.githubRepo = githubRepo;
+  if (tags) existingProject.tags = tags;
 
-    await existingProject.save();
+  await existingProject.save();
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, existingProject, "Project updated successfully"),
-        );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, existingProject, "Project updated successfully"),
+    );
 });
 
-export const deleteProject = asyncHandler(async () => {
-    const { projectId } = req.params;
+export const deleteProject = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-    const existingProject = await Project.findById(projectId);
-    
-    if (!existingProject) throw new ApiError(404, "Project not found");
+  const existingProject = await Project.findById(projectId);
 
-    if (String(existingProject.createdBy) !== String(req.user._id)) {
-        throw new ApiError(403, "Only project creator can delete project");
-    }
+  if (!existingProject) throw new ApiError(404, "Project not found");
 
+  if (String(existingProject.createdBy) !== String(req.user._id)) {
+    throw new ApiError(403, "Only project creator can delete project");
+  }
 
-    await ProjectMember.deleteMany({ project: projectId });
+  await ProjectMember.deleteMany({ project: projectId });
 
+  await existingProject.deleteOne();
 
-    await existingProject.deleteOne();
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, null, "Project deleted successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Project deleted successfully"));
 });
