@@ -1,9 +1,9 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import User from "../models/user.models.js";
 import { availableTaskStatus, availableUserRoles } from "../utils/constants.js";
 
 
-const resendVerificationValidator = ()=>{
+const resendVerificationValidator = () => {
   return [
     body("email")
       .trim()
@@ -36,7 +36,7 @@ const userRegistrationValidator = () => {
         }
         return true;
       })
-      ,
+    ,
 
     // USERNAME
     body("username")
@@ -84,16 +84,16 @@ const userRegistrationValidator = () => {
 };
 
 const userLoginValidator = () => {
-    return [
-        body('email')
-            .trim()
-            .notEmpty().withMessage("Email is required").bail()
-            .isEmail().withMessage("Invalid Email, please enter valid Email")
-            .toLowerCase(),
+  return [
+    body('email')
+      .trim()
+      .notEmpty().withMessage("Email is required").bail()
+      .isEmail().withMessage("Invalid Email, please enter valid Email")
+      .toLowerCase(),
 
-        body('password')
-            .notEmpty().withMessage("password is mandatory")
-    ];
+    body('password')
+      .notEmpty().withMessage("password is mandatory")
+  ];
 }
 
 const userChangeCurrentPasswordValidator = () => {
@@ -137,14 +137,8 @@ const createProjectValidator = () => {
 };
 const addMemberToProjectValidator = () => {
   return [
-    body("email")
-      .trim()
-      .notEmpty()
-      .withMessage("Email is required")
-      .bail()
-      .isEmail()
-      .withMessage("Email is invalid")
-      .toLowerCase(),
+    param("projectId").isMongoId().withMessage("Invalid projectId"),
+    body("userId").isMongoId().withMessage("Invalid userId"),
     body("role")
       .notEmpty()
       .withMessage("Role is required")
@@ -152,6 +146,25 @@ const addMemberToProjectValidator = () => {
       .isIn(availableUserRoles)
       .withMessage("Role is invalid"),
   ];
+};
+
+const updateProjectMemberRoleValidator = () => {
+  (param("projectId")
+    .isMongoId().withMessage("Invalid projectId"),
+    param("memberId")
+    .isMongoId().withMessage("Invalid MemberId"),
+    body("role")
+      .notEmpty()
+      .withMessage("Role is required")
+      .bail()
+      .isIn(availableUserRoles)
+      .withMessage("Role is invalid"));
+
+
+}
+
+const deleteMemberToProjectValidator = () => {
+
 };
 
 const createTaskValidator = () => {
@@ -195,4 +208,5 @@ export {
   userForgotPasswordValidator,
   userResetForgottenPasswordValidator,
   resendVerificationValidator,
+  deleteMemberToProjectValidator,
 };

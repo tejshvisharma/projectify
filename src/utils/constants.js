@@ -2,7 +2,6 @@ export const userRolesEnum = {
   OWNER: "owner",
   PROJECT_ADMIN: "project_admin",
   MEMBER: "member",
-  EDITOR: "editor",
   VIEWER: "viewer",
 };
 
@@ -16,13 +15,13 @@ export const PROJECT_ROLES = {
   ALL: Object.values(userRolesEnum),
   MANAGEMENT: [userRolesEnum.OWNER, userRolesEnum.PROJECT_ADMIN],
   EDITORS: [
-    userRolesEnum.EDITOR,
+    userRolesEnum.MEMBER,
     userRolesEnum.OWNER,
     userRolesEnum.PROJECT_ADMIN,
   ],
   VIEWERS: [
     userRolesEnum.VIEWER,
-    userRolesEnum.EDITOR,
+    userRolesEnum.MEMBER,
     userRolesEnum.OWNER,
     userRolesEnum.PROJECT_ADMIN,
   ],

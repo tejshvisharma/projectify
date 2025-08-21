@@ -1,12 +1,16 @@
 import { Router } from "express";
-import userRolesEnum from "../utils/constants.js"
+import { userRolesEnum, PROJECT_ROLES } from "../utils/constants.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
 import { validateProjectPermission } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router
   .route("/:projectId")
-  .get(getNotes)
-  .post(isLoggedIn,validateProjectPermission([userRolesEnum.ADMIN]), createNote);
+  .get(isLoggedIn, validateProjectPermission([PROJECT_ROLES.VIEWERS]), getNotes)
+  .post(
+    isLoggedIn,
+    validateProjectPermission([PROJECT_ROLES.EDITORS]),
+    createNote,
+  );
 
 export default router
