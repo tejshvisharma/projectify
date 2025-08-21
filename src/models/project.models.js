@@ -1,5 +1,5 @@
 import mongoose, {Schema} from "mongoose";
-
+import { asyncHandler } from "../utils/async-handler";
 const projectSchema = new Schema(
   {
     name: {
@@ -23,6 +23,33 @@ const projectSchema = new Schema(
   },
   { timestamps: true },
 );
+
+
+projectSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  asyncHandler(async function (next)  {
+    const projectId = this._id;
+
+    // Delete all members of this project
+    await mongoose.model("projectMember").deleteMany({ project: projectId });
+
+    // Find all tasks of this project
+    const tasks = await mongoose.model("task").find({ project: projectId });
+
+    // Delete all comments of each task
+    const taskIds = tasks.map((t) => t._id);
+    if (taskIds.length > 0) {
+      await mongoose.model("note").deleteMany({ task: { $in: taskIds } });
+    }
+
+    // Delete tasks themselves
+    await mongoose.model("task").deleteMany({ project: projectId });
+
+    next();
+  }),
+);
+
 
 
 export const project = mongoose.model("project",projectSchema);

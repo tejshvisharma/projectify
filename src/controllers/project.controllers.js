@@ -220,7 +220,7 @@ export const deleteProject = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Only project creator can delete project");
   }
 
-  await ProjectMember.deleteMany({ project: projectId });
+//   await ProjectMember.deleteMany({ project: projectId });   not needed because pre-hook implemented
 
   await existingProject.deleteOne();
 

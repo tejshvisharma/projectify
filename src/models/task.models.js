@@ -1,6 +1,6 @@
 import mongoose, {Schema} from "mongoose";
 import { availableTaskStatus, taskStatusEnums } from "../utils/constants";
-
+import { asyncHandler } from "../utils/async-handler";
 const taskSchema = new Schema(
   {
     title: {
@@ -65,5 +65,16 @@ const taskSchema = new Schema(
   { timestamps: true },
 );
 
+
+taskSchema.pre(
+  "deleteOne",
+  { document: true, query: false },
+  asyncHandler(async function (next) {
+    const taskId = this._id;
+
+    await mongoose.model("comment").deleteMany({ task: taskId });
+    next();
+  }),
+);
 
 export const task = mongoose.model("Task",taskSchema);
