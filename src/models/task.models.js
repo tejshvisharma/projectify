@@ -1,6 +1,12 @@
 import mongoose, {Schema} from "mongoose";
 import { availableTaskStatus, taskStatusEnums } from "../utils/constants";
 import { asyncHandler } from "../utils/async-handler";
+import {
+  availableTaskDifficulties,
+  taskDifficultyEnums,
+  taskPriorityEnums,
+  availableTaskPriorities,
+} from "../utils/constants.js";
 const taskSchema = new Schema(
   {
     title: {
@@ -46,20 +52,20 @@ const taskSchema = new Schema(
     },
     priority: {
       type: String,
-      enum: ["low", "medium", "high", "critical"],
-      default: "medium",
+      enum: availableTaskPriorities,
+      default: taskPriorityEnums.MEDIUM,
     },
     difficulty: {
       type: String,
-      enum: ["easy", "medium", "hard", "expert"],
-      default: "medium",
+      enum: availableTaskDifficulties,
+      default: taskDifficultyEnums.MEDIUM,
     },
     credits: {
       type: Number,
       default: 0,
     },
     dueDate: {
-        type: Date,
+      type: Date,
     },
   },
   { timestamps: true },
@@ -72,7 +78,9 @@ taskSchema.pre(
   asyncHandler(async function (next) {
     const taskId = this._id;
 
-    await mongoose.model("comment").deleteMany({ task: taskId });
+    await mongoose.model("note").deleteMany({ task: taskId });
+
+     await mongoose.model("subTask").deleteMany({ task: taskId });
     next();
   }),
 );

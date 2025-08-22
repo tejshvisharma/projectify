@@ -27,14 +27,30 @@ export const PROJECT_ROLES = {
   ],
 };
 
-
 export const GLOBAL_ROLES_LIST = Object.values(GLOBAL_ROLES);
 
-export const availableUserRoles = Object.values(userRolesEnum)
+export const availableUserRoles = Object.values(userRolesEnum);
 
 export const taskStatusEnums = {
-    TODO:"todo",
-    IN_PROGRESS:"in_progress",
-    DONE:"done",
-}
-export const availableTaskStatus = Object.values(taskStatusEnums)
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  DONE: "done",
+};
+export const availableTaskStatus = Object.values(taskStatusEnums);
+
+export const taskDifficultyEnums = {
+  EASY: "easy",
+  MEDIUM: "medium",
+  HARD: "hard",
+  EXPERT: "expert",
+};
+
+export const availableTaskDifficulties = Object.values(taskDifficultyEnums);
+
+export const taskPriorityEnums = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+  CRITICAL: "critical",
+};
+export const availableTaskPriorities = Object.values(taskPriorityEnums);

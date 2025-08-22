@@ -29,6 +29,17 @@ import { validate } from "../middlewares/validate.middleware.js";
 
 import { PROJECT_ROLES } from "../utils/constants.js";
 
+import {
+  createTask,
+  getTasks,
+  updateTask,
+  deleteTask,
+} from "../controllers/task.controllers.js";
+import {
+  createTaskValidator,
+  updateTaskValidator,
+} from "../validators/task.validators.js";
+
 const router = Router();
 
 router.route("/")
@@ -70,5 +81,32 @@ router
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     deleteProjectMember,
   );
+
+
+  router
+    .route("/:projectId/tasks")
+    .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getTasks)
+    .post(
+      isLoggedIn,
+      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+      createTaskValidator(),
+      validate,
+      createTask,
+    );
+
+  router
+    .route("/:projectId/tasks/:taskId")
+    .patch(
+      isLoggedIn,
+      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+      updateTaskValidator(),
+      validate,
+      updateTask,
+    )
+    .delete(
+      isLoggedIn,
+      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+      deleteTask,
+    );
 
 export default router;

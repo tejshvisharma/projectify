@@ -1,6 +1,11 @@
 import { body, param } from "express-validator";
 import User from "../models/user.models.js";
-import { availableTaskStatus, availableUserRoles } from "../utils/constants.js";
+import {
+  availableTaskStatus,
+  availableUserRoles,
+  availableTaskDifficulties,
+  availableTaskPriorities,
+} from "../utils/constants.js";
 
 
 const resendVerificationValidator = () => {
@@ -9,7 +14,7 @@ const resendVerificationValidator = () => {
       .trim()
       .notEmpty()
       .withMessage("Email is required")
-      .bail() // stop if empty
+      .bail()
       .isEmail()
       .withMessage("Invalid Email, please enter valid Email")
       .toLowerCase()
@@ -22,14 +27,14 @@ const userRegistrationValidator = () => {
       .trim()
       .notEmpty()
       .withMessage("Email is required")
-      .bail() // stop if empty
+      .bail()
       .isEmail()
       .withMessage("Invalid Email, please enter valid Email")
-      .bail() // stop if invalid
+      .bail() 
       .toLowerCase()
       .custom(async (email) => {
         const existingUser = await User.findOne({
-          email: { $regex: `^${email}$`, $options: "i" }, // case-insensitive match
+          email: { $regex: `^${email}$`, $options: "i" }, 
         });
         if (existingUser) {
           throw new Error("Email is already registered");
@@ -38,7 +43,6 @@ const userRegistrationValidator = () => {
       })
     ,
 
-    // USERNAME
     body("username")
       .trim()
       .notEmpty()
@@ -169,14 +173,28 @@ const deleteMemberToProjectValidator = () => {
 
 const createTaskValidator = () => {
   return [
+    param("projectId")
+    .notEmpty()
+    .withMessage("projectId is mandatory")
+    .isMongoId()
+    .withMessage("ProjectId is invalid"),
     body("title").notEmpty().withMessage("Title is required"),
     body("description").optional(),
-    body("assignedTo").notEmpty().withMessage("Assigned to is required"),
-    body("status")
-      .optional()
+    body("assignedTo")
       .notEmpty()
-      .withMessage("Status is required")
-      .isIn(availableTaskStatus),
+      .withMessage("Assigned to is required")
+      .isMongoId()
+      .withMessage("Invalid assignee"),
+    body("status").optional().bail().isIn(availableTaskStatus),
+    body("priority")
+      .optional()
+      .isIn(availableTaskPriorities)
+      .withMessage("Priority is invalid"),
+    body("difficulty")
+      .optional()
+      .isIn(availableTaskDifficulties)
+      .withMessage("Difficulty is invalid"),
+    body("dueDate").optional().isDate(),
   ];
 };
 
@@ -189,6 +207,15 @@ const updateTaskValidator = () => {
       .isIn(availableTaskStatus)
       .withMessage("Status is invalid"),
     body("assignedTo").optional(),
+    body("priority")
+      .optional()
+      .isIn(availableTaskPriorities)
+      .withMessage("Priority is invalid"),
+    body("difficulty")
+      .optional()
+      .isIn(availableTaskDifficulties)
+      .withMessage("Difficulty is invalid"),
+    body("dueDate").optional().isDate(),
   ];
 };
 
