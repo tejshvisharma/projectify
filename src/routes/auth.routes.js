@@ -25,7 +25,7 @@ import {
 
 import { validate } from "../middlewares/validate.middleware.js";
 
-import isLoggedIn from "../middlewares/auth.middleware.js";
+import { isLoggedIn } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.route("/register")

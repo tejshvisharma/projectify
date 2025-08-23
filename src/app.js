@@ -23,15 +23,14 @@ app.use(
 // Routers import
 import healthCheckRouter from "./routes/healthCheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
-import notesRouter from "./routes/note.routes.js";
 import projectRouter from "./routes/project.routes.js";
-import taskRouter from "./routes/task.routes.js";
+
 
 
 
 app.use("/api/v1/healthcheck",healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/notes", notesRouter);
+
 app.use("/api/v1/projects", projectRouter);
 
 

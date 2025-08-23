@@ -1,5 +1,5 @@
 import mongoose, {Schema} from "mongoose";
-import { asyncHandler } from "../utils/async-handler";
+import { asyncHandler } from "../utils/async-handler.js";
 const projectSchema = new Schema(
   {
     name: {

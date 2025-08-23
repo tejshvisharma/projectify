@@ -23,7 +23,7 @@ import {
   addMemberToProjectValidator,
   updateProjectMemberRoleValidator,
   createProjectValidator,
-} from "../validators/project.validators.js";
+} from "../validators/auth.validators.js";
 
 import { validate } from "../middlewares/validate.middleware.js";
 
@@ -72,7 +72,7 @@ router
   .patch(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-    updateProjectMemberRoleValidator(), 
+    updateProjectMemberRoleValidator, 
     validate,
     updateProjectMemberRole,
   )

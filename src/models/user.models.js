@@ -6,9 +6,9 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
 
-import { GLOBAL_ROLES } from "../utils/constants";
+import { GLOBAL_ROLES } from "../utils/constants.js";
 
-import { GLOBAL_ROLES_LIST } from "../utils/constants";
+import { GLOBAL_ROLES_LIST } from "../utils/constants.js";
 
 const userSchema = new Schema(
   {

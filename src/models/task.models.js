@@ -1,6 +1,6 @@
 import mongoose, {Schema} from "mongoose";
-import { availableTaskStatus, taskStatusEnums } from "../utils/constants";
-import { asyncHandler } from "../utils/async-handler";
+import { availableTaskStatus, taskStatusEnums } from "../utils/constants.js";
+import { asyncHandler } from "../utils/async-handler.js";
 import {
   availableTaskDifficulties,
   taskDifficultyEnums,
