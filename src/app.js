@@ -24,14 +24,17 @@ app.use(
 import healthCheckRouter from "./routes/healthCheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import projectRouter from "./routes/project.routes.js";
+import commentRouter from "./routes/comment.routes.js";
+
+
 
 
 
 
 app.use("/api/v1/healthcheck",healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
-
 app.use("/api/v1/projects", projectRouter);
+app.use("/api/v1/comments", commentRouter);
 
 
 
