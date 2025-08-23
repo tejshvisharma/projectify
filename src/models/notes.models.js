@@ -15,7 +15,15 @@ const projectNotesSchema = new Schema({
     content:{
         type:String,
         required:true
+    },
+     mentions: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
     }
+  }],
+
 },{timestamps:true})
 
 

@@ -78,7 +78,7 @@ taskSchema.pre(
   asyncHandler(async function (next) {
     const taskId = this._id;
 
-    await mongoose.model("note").deleteMany({ task: taskId });
+    await mongoose.model("comment").deleteMany({ task: taskId });
 
      await mongoose.model("subTask").deleteMany({ task: taskId });
     next();

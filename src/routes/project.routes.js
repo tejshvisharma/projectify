@@ -40,7 +40,19 @@ import {
   updateTaskValidator,
 } from "../validators/task.validators.js";
 
+import {
+  getNotes,
+  createNote,
+  updateNote,
+  getMyMentions,
+  deleteNote,
+  getNoteById,
+} from "../controllers/note.controllers.js";
+
+import { createNoteValidator, updateNoteValidator } from "../validators/notesValidators.js";
 const router = Router();
+
+// for projects routing :
 
 router.route("/")
   .post(isLoggedIn, createProjectValidator(), validate, createProject) 
@@ -48,10 +60,10 @@ router.route("/")
 
 router
   .route("/:projectId")
-  .put(isLoggedIn, validateProjectPermission(PROJECT_ROLES.MANAGEMENT), updateProject)
+  .patch(isLoggedIn, validateProjectPermission(PROJECT_ROLES.MANAGEMENT), updateProject)
   .delete(isLoggedIn, deleteProject);
 
-
+// for project Member routing :
 router
   .route("/:projectId/members")
   .get(
@@ -82,7 +94,7 @@ router
     deleteProjectMember,
   );
 
-
+// for tasks routing :
   router
     .route("/:projectId/tasks")
     .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getTasks)
@@ -109,4 +121,49 @@ router
       deleteTask,
     );
 
+// for notes routing :
+
+  router
+    .route("/:projectId/notes")
+    .get(
+      isLoggedIn,
+      validateProjectPermission([PROJECT_ROLES.VIEWERS]),
+      getNotes,
+    )
+    .post(
+      isLoggedIn,
+      validateProjectPermission([PROJECT_ROLES.MANAGEMENT]),
+      createNoteValidator(),
+      validate,
+      createNote,
+    );
+
+  router
+    .route("/:projectId/notes/:noteId")
+    .get(
+      isLoggedIn,
+      validateProjectPermission(PROJECT_ROLES.VIEWERS),
+      getNoteById,
+    )
+    .patch(
+      isLoggedIn,
+      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+      updateNoteValidator(),
+      validate,
+      updateNote,
+    )
+    .delete(
+      isLoggedIn,
+      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+      validate,
+      deleteNote,
+    );
+
+  router
+   .route("/:projectId/notes/mentions/me")
+   .get(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.VIEWERS),
+    getMyMentions
+    );
 export default router;
