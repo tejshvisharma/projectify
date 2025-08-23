@@ -7,6 +7,20 @@ import {
   taskPriorityEnums,
   availableTaskPriorities,
 } from "../utils/constants.js";
+
+const attachmentSchema = new Schema(
+  {
+    url: { type: String, required: true }, // secure url
+    public_id: { type: String, required: true }, // for later delete
+    resource_type: { type: String }, // image, raw, video
+    bytes: { type: Number }, // size in bytes
+    format: { type: String }, // jpg, png, pdf...
+    original_filename: { type: String }, // client filename
+    mimeType: { type: String }, // request mime type
+  },
+  { _id: false },
+);
+
 const taskSchema = new Schema(
   {
     title: {
@@ -41,13 +55,7 @@ const taskSchema = new Schema(
       required: true,
     },
     attachments: {
-      type: [
-        {
-          type: String,
-          MimeType: String,
-          size: Number,
-        },
-      ],
+      type: [attachmentSchema],
       default: [],
     },
     priority: {

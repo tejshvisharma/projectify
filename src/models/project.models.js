@@ -40,7 +40,7 @@ projectSchema.pre(
     // Delete all comments of each task
     const taskIds = tasks.map((t) => t._id);
     if (taskIds.length > 0) {
-      await mongoose.model("comment").deleteMany({ task: { $in: taskIds } });
+      await mongoose.model("Comment").deleteMany({ task: { $in: taskIds } });
     }
 
     // Delete tasks themselves

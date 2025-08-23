@@ -7,6 +7,8 @@ import { projectMember as ProjectMember } from "../models/projectmember.models.j
 import { userRolesEnum } from "../utils/constants.js";
 import { project as Project } from "../models/project.models.js";
 import {  task as Task } from "../models/task.models.js";
+import cloudinary from "../config/cloudinary.js";
+
 
 export const createTask = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -18,7 +20,6 @@ export const createTask = asyncHandler(async (req, res) => {
     description,
     assignedTo,
     status,
-    attachments,
     priority,
     difficulty,
     credits,
@@ -41,6 +42,18 @@ export const createTask = asyncHandler(async (req, res) => {
       throw new ApiError(403, "Task due date cannot be after project end date");
     }
   }
+
+  // map uploaded files (multer-storage-cloudinary result)
+  const attachments =
+    (req.files || []).map((f) => ({
+      url: f.path, // secure Cloudinary URL
+      public_id: f.filename, // Cloudinary public_id
+      resource_type: f.resource_type,
+      bytes: f.bytes,
+      format: f.format,
+      original_filename: f.originalname,
+      mimeType: f.mimetype,
+    })) ?? [];
 
   const newTask = await Task.create({
     project: projectId,
@@ -88,71 +101,78 @@ export const getTasks = asyncHandler(async (req, res) => {
 
 
 export const updateTask = asyncHandler(async (req, res) => {
-  
-    const { projectId, taskId } = req.params;
-    const changes = req.body;
+  const { projectId, taskId } = req.params;
+  const { removeFiles = [] } = req.body; // ✅ array of public_ids to delete
+  const changes = req.body;
 
-    const project = await Project.findById(projectId);
-    if (!project) throw new ApiError(404, "Project not found");
+  const project = await Project.findById(projectId);
+  if (!project) throw new ApiError(404, "Project not found");
 
-    const task = await Task.findById(taskId);
+  const task = await Task.findById(taskId);
+  if (!task || String(task.project) !== String(projectId))
+    throw new ApiError(404, "Task not found in this project");
 
-    if (!task || String(task.project) !== String(projectId))
-      throw new ApiError(404, "Task not found in this project");
-
-    // if assignedTo changed -> ensure user exists and is project member
-    if (changes.assignedTo && changes.assignedTo !== String(task.assignedTo)) {
-      const newAss = await User.findById(changes.assignedTo);
-      if (!newAss) throw new ApiError(404, "Assignee not found");
-
-      const isMember = await ProjectMember.findOne({
-        project: projectId,
-        user: changes.assignedTo,
-      });
-      if (!isMember)
-        throw new ApiError(400, "Assignee must be a project member");
-    }
-
-    // validate dueDate
-    if (changes.dueDate) {
-      const due = new Date(changes.dueDate);
-      if (isNaN(due.getTime())) throw new ApiError(400, "Invalid dueDate");
-      if (project.endDate && due > project.endDate)
-        throw new ApiError(403, "dueDate after project end date");
-    }
-
-    // allowed updates
-    const allowed = [
-      "title",
-      "description",
-      "assignedTo",
-      "status",
-      "priority",
-      "difficulty",
-      "dueDate",
-      "credits",
-    ];
-
-    if (!allowed.some((k) => k in changes)) {
-      throw new ApiError(400, "No valid fields provided for update");
-    }
-
-    Object.keys(changes).forEach((key) => {
-      if (!allowed.includes(key)) delete changes[key];
-    });
-
-    for (let k of allowed) if (k in changes) task[k] = changes[k];
-
-    await task.save();
-
-    const populated = await Task.findById(task._id).populate(
-      "createdBy assignedTo",
-      "_id username avatar",
+  // ✅ Remove requested files from Cloudinary and DB
+  if (removeFiles.length > 0) {
+    const remainingAttachments = task.attachments.filter(
+      (file) => !removeFiles.includes(file.public_id),
     );
-    return res
-      .status(200)
-      .json(new ApiResponse(200, populated, "Task updated"));
-  });
+
+    const deletePromises = task.attachments
+      .filter((file) => removeFiles.includes(file.public_id))
+      .map((file) =>
+        cloudinary.uploader.destroy(file.public_id, {
+          resource_type: file.resource_type || "image",
+        }),
+      );
+
+    await Promise.all(deletePromises);
+    task.attachments = remainingAttachments;
+  }
+
+  // ✅ Add new uploaded files (if any)
+  if (req.files && req.files.length > 0) {
+    const newFiles = req.files.map((file) => ({
+      url: file.path,
+      public_id: file.filename,
+      resource_type: file.mimetype.startsWith("video") ? "video" : "image",
+      size: file.size,
+    }));
+    task.attachments.push(...newFiles);
+  }
+
+  // ✅ Validate dueDate
+  if (changes.dueDate) {
+    const due = new Date(changes.dueDate);
+    if (isNaN(due.getTime())) throw new ApiError(400, "Invalid dueDate");
+    if (project.endDate && due > project.endDate)
+      throw new ApiError(403, "dueDate after project end date");
+  }
+
+  // ✅ Update allowed fields
+  const allowed = [
+    "title",
+    "description",
+    "assignedTo",
+    "status",
+    "priority",
+    "difficulty",
+    "dueDate",
+    "credits",
+  ];
+  for (let k of allowed) if (k in changes) task[k] = changes[k];
+
+  await task.save();
+
+  const populated = await Task.findById(task._id)
+    .populate("createdBy assignedTo", "_id username avatar")
+    .lean();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, populated, "Task updated successfully"));
+});
+
 
 
 
@@ -164,6 +184,16 @@ export const deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(taskId);
   if (!task || String(task.project) !== String(projectId))
     throw new ApiError(404, "Task not found");
+
+  // ✅ Remove attachments from Cloudinary
+  if (task.attachments && task.attachments.length > 0) {
+    const deletePromises = task.attachments.map((file) =>
+      cloudinary.uploader.destroy(file.public_id, {
+        resource_type: file.resource_type || "image",
+      }),
+    );
+    await Promise.all(deletePromises);
+  }
 
   // authorization if needed additional check: if caller is creator allow, else rely on middleware role
   await task.deleteOne(); // triggers pre('deleteOne') to remove comments

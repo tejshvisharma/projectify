@@ -50,6 +50,9 @@ import {
 } from "../controllers/note.controllers.js";
 
 import { createNoteValidator, updateNoteValidator } from "../validators/notesValidators.js";
+
+import { uploadTaskAttachments } from "../middlewares/upload.middleware.js";
+
 const router = Router();
 
 // for projects routing :
@@ -101,6 +104,7 @@ router
     .post(
       isLoggedIn,
       validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+      uploadTaskAttachments.array("attachments", 5),
       createTaskValidator(),
       validate,
       createTask,
@@ -111,6 +115,7 @@ router
     .patch(
       isLoggedIn,
       validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+        upload.array("attachments", 5),
       updateTaskValidator(),
       validate,
       updateTask,
