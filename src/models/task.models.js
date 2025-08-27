@@ -88,7 +88,8 @@ taskSchema.pre(
 
     await mongoose.model("comment").deleteMany({ task: taskId });
 
-     await mongoose.model("subTask").deleteMany({ task: taskId });
+    await mongoose.model("subTask").deleteMany({ task: this._id });
+
     next();
   }),
 );

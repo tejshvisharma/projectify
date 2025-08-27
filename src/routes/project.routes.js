@@ -115,7 +115,7 @@ router
     .patch(
       isLoggedIn,
       validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-        upload.array("attachments", 5),
+      uploadTaskAttachments.array("attachments", 5),
       updateTaskValidator(),
       validate,
       updateTask,
