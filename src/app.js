@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 const app = express();
-
+// all middlewares :
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
@@ -15,11 +15,12 @@ app.use(
   cors({
     origin:  [process.env.BASE_URL, "http://localhost:3000"],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization","Accept"],
+    exposedHeaders: ["Set-Cookie", "*"]
+  })
 );
-
+app.use(express.static("public"));
 // Routers import
 import healthCheckRouter from "./routes/healthCheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
@@ -36,7 +37,7 @@ app.use("/api/v1/healthcheck",healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/comments", commentRouter);
-app.use("/api/v1/subTasks", SubTaskRouter);
+app.use("/api/v1/subtasks", SubTaskRouter);
 
 
 

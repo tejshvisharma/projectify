@@ -4,10 +4,9 @@ import {
     getSubTask,
     updateSubTask,
     deleteSubTask,
-} from "../controllers/comment.controllers.js";
+} from "../controllers/subTask.controllers.js";
 import {
-    isLoggedIn,
-    validateProjectPermission,
+    isLoggedIn
 } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
