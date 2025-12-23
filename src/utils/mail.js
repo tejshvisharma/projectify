@@ -9,9 +9,6 @@ dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
 
 const sendEmail = async ({ subject, to, mailGenContent }) => {
    
-  console.log(subject);
-  console.log(to);
-  console.log(mailGenContent);
   if (!subject || !to || !mailGenContent) {
     throw new Error("Please provide subject, recipient, and mailGenContent");
   }
@@ -58,38 +55,60 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
 
 
 const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
-    return {
-      body: {
-        name: username,
-        intro: `we got a request to reset your password`,
-        action: {
-          instruction: `to forget your password click button below`,
-          button: {
-            color: "blue",
-            text: "forget your password",
-            link: passwordResetUrl,
-          },
+  return {
+    body: {
+      name: username,
+      intro: [
+        "We received a request to reset your Projectify account password.",
+        "If you didn't make this request, you can safely ignore this email.",
+      ],
+      action: {
+        instructions: "To reset your password, click the button below:",
+        button: {
+          color: "#dc4d2f",
+          text: "Reset Password",
+          link: passwordResetUrl,
         },
-        outro: "have any query or  question feel free to reply...",
       },
-    };
-
-}
+      outro: [
+        "**If the button doesn't work**, copy and paste this URL into your browser:",
+        passwordResetUrl,
+        "",
+        "This password reset link will expire in 1 hour for security reasons.",
+        "Need help or have questions? Just reply to this email - we're always happy to help.",
+      ],
+    },
+  };
+};
 
 const emailVerificationMailGenContent = (username, emailVerificationUrl) => {
   return {
     body: {
       name: username,
-      intro: `welcome to projectify ! we are glad to have you`,
+      intro: [
+        "Welcome to KaryaDesk! We're thrilled to have you on board.",
+        "Our platform helps teams collaborate more effectively and manage projects with ease.",
+      ],
       action: {
-        instruction: `to verify your email, click button below`,
+        instructions: "To get started, please verify your email address:",
         button: {
-          color: `default`,
-          text: `verify your email`,
+          color: "#6e8efb", // More appealing color
+          text: "Verify Your Email",
           link: emailVerificationUrl,
         },
       },
-      outro: "Have any query or  question feel free to reply...",
+      outro: [
+        "**If the button doesn't work**, copy and paste this URL into your browser:",
+        emailVerificationUrl,
+        "",
+        "Have any questions or need help? Feel free to reply to this email.",
+        "Our support team is here to help you succeed with Projectify!",
+      ],
+      signature: false, // MailGen will handle this
+    },
+    footer: {
+      name: "KaryaDesk Team",
+      subtitle: "Simplify your project management",
     },
   };
 };
