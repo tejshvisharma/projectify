@@ -6,184 +6,243 @@ import User from "../models/user.models.js";
 import { projectMember as ProjectMember } from "../models/projectmember.models.js";
 import { userRolesEnum } from "../utils/constants.js";
 import { project as Project } from "../models/project.models.js";
+import {
+  parsePaginationParams,
+  createPaginationMeta,
+} from "../utils/pagination.js";
 
 export const addProjectMember = asyncHandler(async (req, res) => {
-    const { projectId } = req.params;
-    const { userId, role = userRolesEnum.VIEWER } = req.body;
+  const { projectId } = req.params;
+  const { userId, role = userRolesEnum.VIEWER } = req.body;
 
-    const targetUser = await User.findById(userId).select("_id username email");
-    if (!targetUser) {
-        throw new ApiError(404, "Target user not found");
-    }
+  const targetUser = await User.findById(userId).select("_id username email");
+  if (!targetUser) {
+    throw new ApiError(404, "Target user not found");
+  }
 
-    const targetProject = await Project.findById(projectId);
-    if (!targetProject) {
-        throw new ApiError(404, "Target project not found");
-    }
+  const targetProject = await Project.findById(projectId);
+  if (!targetProject) {
+    throw new ApiError(404, "Target project not found");
+  }
 
-    const exists = await ProjectMember.findOne({
-        project: projectId,
-        user: targetUser._id,
+  const exists = await ProjectMember.findOne({
+    project: projectId,
+    user: targetUser._id,
+  });
+
+  if (exists) {
+    throw new ApiError(409, "User is already a member of this project");
+  }
+
+  try {
+    const member = await ProjectMember.create({
+      project: new mongoose.Types.ObjectId(projectId),
+      user: targetUser._id,
+      role,
     });
 
-    if (exists) {
-        throw new ApiError(409, "User is already a member of this project");
+    return res.status(201).json(
+      new ApiResponse(
+        201,
+        {
+          id: member._id,
+          project: member.project,
+          role: member.role,
+          user: {
+            id: targetUser._id,
+            username: targetUser.username,
+            email: targetUser.email,
+          },
+        },
+        "Member added to project",
+      ),
+    );
+  } catch (err) {
+    if (err?.code === 11000) {
+      throw new ApiError(409, "User is already a member of this project");
     }
-
-    try {
-        const member = await ProjectMember.create({
-            project: mongoose.Types.ObjectId(projectId),
-            user: targetUser._id,
-            role,
-        });
-
-        return res.status(201).json(
-            new ApiResponse(
-                201,
-                {
-                    id: member._id,
-                    project: member.project,
-                    role: member.role,
-                    user: {
-                        id: targetUser._id,
-                        username: targetUser.username,
-                        email: targetUser.email,
-                    },
-                },
-                "Member added to project",
-            ),
-        );
-    } catch (err) {
-        if (err?.code === 11000) {
-            throw new ApiError(409, "User is already a member of this project");
-        }
-        throw err;
-    }
+    throw err;
+  }
 });
 
 export const getProjectMembers = asyncHandler(async (req, res) => {
-    const { projectId } = req.params;
+  const { projectId } = req.params;
 
-    const targetProject = await Project.findById(projectId);
-    if (!targetProject) {
-        throw new ApiError(404, "Target project not found");
-    }
+  const targetProject = await Project.findById(projectId);
+  if (!targetProject) {
+    throw new ApiError(404, "Target project not found");
+  }
 
-    try {
-        const projectMembers = await ProjectMember.find({
-            project: mongoose.Types.ObjectId(projectId),
-        })
-            .populate("user", "_id username avatar ")
-            .sort({ createdAt: -1 });
+  try {
+    const projectMembers = await ProjectMember.find({
+      project: new mongoose.Types.ObjectId(projectId),
+    })
+      .populate("user", "_id username avatar ")
+      .sort({ createdAt: -1 });
 
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(
-                    200,
-                    projectMembers,
-                    "Project members fetched successfully",
-                ),
-            );
-    } catch (err) {
-        throw err;
-    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          projectMembers,
+          "Project members fetched successfully",
+        ),
+      );
+  } catch (err) {
+    throw err;
+  }
 });
 
 export const updateProjectMemberRole = asyncHandler(async (req, res) => {
-    const { projectId, memberId } = req.params;
+  const { projectId, memberId } = req.params;
 
-    const { role } = req.body;
+  const { role } = req.body;
 
-    const existingProject = await Project.findById(projectId);
-    if (!existingProject) {
-        throw new ApiError(404, "Project not found");
+  const existingProject = await Project.findById(projectId);
+  if (!existingProject) {
+    throw new ApiError(404, "Project not found");
+  }
+
+  const existingMember = await ProjectMember.findById(memberId).populate(
+    "user",
+    "avatar username email",
+  );
+
+  if (!existingMember) {
+    throw new ApiError(404, "Project Member not found");
+  }
+
+  // Ensure member belongs to this project
+  if (String(existingMember.project) !== String(projectId)) {
+    throw new ApiError(400, "Member does not belong to this project");
+  }
+
+  // Prevent users from changing their own role
+  if (String(existingMember.user._id) === String(req.user._id)) {
+    throw new ApiError(403, "You cannot change your own role");
+  }
+
+  // Check if this is the last owner
+  if (
+    existingMember.role === userRolesEnum.OWNER &&
+    role !== userRolesEnum.OWNER
+  ) {
+    const ownerCount = await ProjectMember.countDocuments({
+      project: projectId,
+      role: userRolesEnum.OWNER,
+    });
+
+    if (ownerCount === 1) {
+      throw new ApiError(
+        403,
+        "Cannot change role of the last owner. Assign another owner first.",
+      );
     }
+  }
 
-    const existingMember = await ProjectMember.findById(memberId).populate(
-        "user",
-        "avatar username email",
-    );
+  existingMember.role = role;
+  await existingMember.save();
 
-    if (!existingMember) {
-        throw new ApiError(404, "Project Member not found");
-    }
-
-    existingMember.role = role;
-    await existingMember.save();
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            {
-                user: existingMember.user,
-                project: existingMember.project,
-                role: existingMember.role,
-            },
-            "Member updated to project",
-        ),
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        user: existingMember.user,
+        project: existingMember.project,
+        role: existingMember.role,
+      },
+      "Member role updated successfully",
+    ),
+  );
 });
 
 export const deleteProjectMember = asyncHandler(async (req, res) => {
-    const { projectId, memberId } = req.params;
+  const { projectId, memberId } = req.params;
 
-    const existingProject = await Project.findById(projectId);
-    if (!existingProject) {
-        throw new ApiError(404, "Project not found");
-    }
+  const existingProject = await Project.findById(projectId);
+  if (!existingProject) {
+    throw new ApiError(404, "Project not found");
+  }
 
-    try {
-        const deletedMember = await ProjectMember.findOneAndDelete({
-            project: mongoose.Types.ObjectId(projectId),
-            _id: mongoose.Types.ObjectId(memberId),
-        });
+  // Check if the member to be deleted is an owner
+  const memberToDelete = await ProjectMember.findOne({
+    project: new mongoose.Types.ObjectId(projectId),
+    _id: new mongoose.Types.ObjectId(memberId),
+  });
 
-        if (!deletedMember) {
-            throw new ApiError(404, "Member not found");
-        }
+  if (!memberToDelete) {
+    throw new ApiError(404, "Member not found");
+  }
 
-        return res
-            .status(200)
-            .json(new ApiResponse(200, deletedMember, "Member deleted from project"));
-    } catch (err) {
-        throw err;
-    }
-});
-
-export const createProject = asyncHandler(async (req, res) => {
-    const { name, description, endDate, githubRepo = "", tags = [] } = req.body;
-
-    const newProject = await Project.create({
-        name,
-        description,
-        endDate,
-        githubRepo,
-        tags,
-        createdBy: req.user._id,
+  // Prevent removing the last owner
+  if (memberToDelete.role === userRolesEnum.OWNER) {
+    const ownerCount = await ProjectMember.countDocuments({
+      project: projectId,
+      role: userRolesEnum.OWNER,
     });
 
-    await ProjectMember.create({
-        project: newProject._id,
-        user: req.user._id,
-        role: userRolesEnum.OWNER,
-    });
+    if (ownerCount === 1) {
+      throw new ApiError(
+        403,
+        "Cannot remove the last owner. Assign another owner first.",
+      );
+    }
+  }
 
-    return res
-        .status(201)
-        .json(new ApiResponse(201, newProject, "Project created successfully"));
-});
-
-export const getProjects = asyncHandler(async (req, res) => {
-  const memberships = await ProjectMember.find({
-    user: mongoose.Types.ObjectId(req.user._id),
-  }).populate("project");
-
-  const projects = memberships.map((m) => m.project);
+  await memberToDelete.deleteOne();
 
   return res
     .status(200)
-    .json(new ApiResponse(200, projects, "Projects fetched successfully"));
+    .json(new ApiResponse(200, memberToDelete, "Member removed from project"));
+});
+
+export const createProject = asyncHandler(async (req, res) => {
+  const { name, description, endDate, githubRepo = "", tags = [] } = req.body;
+
+  const newProject = await Project.create({
+    name,
+    description,
+    endDate,
+    githubRepo,
+    tags,
+    createdBy: req.user._id,
+  });
+
+  await ProjectMember.create({
+    project: newProject._id,
+    user: req.user._id,
+    role: userRolesEnum.OWNER,
+  });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newProject, "Project created successfully"));
+});
+
+export const getProjects = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = parsePaginationParams(req.query);
+
+  const filter = { user: new mongoose.Types.ObjectId(req.user._id) };
+
+  const [total, memberships] = await Promise.all([
+    ProjectMember.countDocuments(filter),
+    ProjectMember.find(filter)
+      .populate("project")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+  ]);
+
+  const projects = memberships.map((m) => m.project);
+
+  const meta = createPaginationMeta(page, limit, total);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { projects, meta }, "Projects fetched successfully"),
+    );
 });
 
 export const updateProject = asyncHandler(async (req, res) => {
@@ -212,15 +271,14 @@ export const updateProject = asyncHandler(async (req, res) => {
 export const deleteProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const existingProject = await Project.findById(projectId);
+  // Project existence and membership already validated by middleware
+  const existingProject = req.project;
 
-  if (!existingProject) throw new ApiError(404, "Project not found");
-
-  if (String(existingProject.createdBy) !== String(req.user._id)) {
-    throw new ApiError(403, "Only project creator can delete project");
+  if (!existingProject) {
+    throw new ApiError(404, "Project not found");
   }
 
-//   await ProjectMember.deleteMany({ project: projectId });   not needed because pre-hook implemented
+  // RBAC check handled by middleware - only OWNER can reach here
 
   await existingProject.deleteOne();
 

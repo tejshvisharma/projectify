@@ -17,28 +17,12 @@ export const createSubTask = asyncHandler(async (req, res) => {
 
   const projectId = task.project;
 
-  const project = await Project.findById(projectId).populate(
-    "createdBy",
-    "id avatar username",
-  );
-  if (!project) throw new ApiError(404, "Project not found");
-
-
-  const isMember = await ProjectMember.findOne({
-    project: projectId,
-    user: req.user._id,
-  });
-  if (!isMember)
-    throw new ApiError(403, "You are not a member of this project");
-
-  if (
-    String(task.assignedTo) !== String(req.user._id) &&
-    String(task.createdBy) !== String(req.user._id) &&
-    String(project.createdBy) !== String(req.user._id) &&
-    String(isMember.role) !== "project_admin"
-  ) {
-    throw new ApiError(403, "You are not allowed to create a Sub Task");
+  // Verify task belongs to the project in params
+  if (String(projectId) !== String(req.params.projectId)) {
+    throw new ApiError(400, "Task does not belong to this project");
   }
+
+  // RBAC already validated by middleware - user has EDITORS role
 
   const newSubTask = await subTask.create({
     title,
@@ -51,11 +35,9 @@ export const createSubTask = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(
-      201,
-      newSubTask,
-      "New Sub Task created successfully"
-    ));
+    .json(
+      new ApiResponse(201, newSubTask, "New Sub Task created successfully"),
+    );
 });
 
 export const getSubTask = asyncHandler(async (req, res) => {
@@ -67,12 +49,12 @@ export const getSubTask = asyncHandler(async (req, res) => {
 
   const projectId = task.project;
 
-  const isMember = await ProjectMember.findOne({
-    project: projectId,
-    user: req.user._id,
-  }).lean();
-  if (!isMember)
-    throw new ApiError(403, "You are not a member of this project");
+  // Verify task belongs to the project in params
+  if (String(projectId) !== String(req.params.projectId)) {
+    throw new ApiError(400, "Task does not belong to this project");
+  }
+
+  // RBAC already validated by middleware
 
   // Parse with safe defaults
   const page = Math.max(1, Number(req.query.page) || 1);
@@ -83,7 +65,8 @@ export const getSubTask = asyncHandler(async (req, res) => {
   const filter = { task: taskId };
   const [total, subTasks] = await Promise.all([
     subTask.countDocuments(filter),
-    subTask.find(filter)
+    subTask
+      .find(filter)
       .populate("createdBy", "_id avatar username")
       .sort({ createdAt: -1 }) // stable, newest first
       .skip(skip)
@@ -126,27 +109,12 @@ export const updateSubTask = asyncHandler(async (req, res) => {
 
   const projectId = task.project;
 
-   const project = await Project.findById(projectId).populate(
-     "createdBy",
-     "id avatar username",
-   );
-   if (!project) throw new ApiError(404, "Project not found");
-
-  const isMember = await ProjectMember.findOne({
-    project: projectId,
-    user: req.user._id,
-  });
-  if (!isMember)
-    throw new ApiError(403, "You are not a member of this project");
-
-  if (
-    String(task.assignedTo) !== String(req.user._id) &&
-    String(task.createdBy) !== String(req.user._id) &&
-    String(task.project.createdBy) !== String(req.user._id) &&
-    String(isMember.role) !== "project_admin"
-  ) {
-    throw new ApiError(403, "You are not allowed to update this Sub Task");
+  // Verify task belongs to the project in params
+  if (String(projectId) !== String(req.params.projectId)) {
+    throw new ApiError(400, "SubTask does not belong to this project");
   }
+
+  // RBAC already validated by middleware - user has EDITORS role
 
   existingSubTask.title = title ?? existingSubTask.title;
   if (typeof isCompleted === "boolean")
@@ -159,13 +127,8 @@ export const updateSubTask = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        existingSubTask,
-        "Sub Task updated successfully",
-      ),
+      new ApiResponse(200, existingSubTask, "Sub Task updated successfully"),
     );
-
 });
 
 export const deleteSubTask = asyncHandler(async (req, res) => {
@@ -178,34 +141,16 @@ export const deleteSubTask = asyncHandler(async (req, res) => {
 
   const projectId = task.project;
 
-   const project = await Project.findById(projectId).populate(
-     "createdBy",
-     "id avatar username",
-   );
-   if (!project) throw new ApiError(404, "Project not found");
-
-  const isMember = await ProjectMember.findOne({
-    project: projectId,
-    user: req.user._id,
-  });
-  if (!isMember)
-    throw new ApiError(403, "You are not a member of this project");
-
-  if (
-    String(task.assignedTo) !== String(req.user._id) &&
-    String(task.createdBy) !== String(req.user._id) &&
-    String(project.createdBy) !== String(req.user._id) &&
-    String(isMember.role) !== "project_admin"
-  ) {
-    throw new ApiError(403, "You are not allowed to delete this Sub Task");
+  // Verify task belongs to the project in params
+  if (String(projectId) !== String(req.params.projectId)) {
+    throw new ApiError(400, "SubTask does not belong to this project");
   }
+
+  // RBAC already validated by middleware - user has EDITORS role
 
   await existingSubTask.deleteOne();
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, null, "Sub Task deleted successfully"),
-    );
+    .json(new ApiResponse(200, null, "Sub Task deleted successfully"));
 });
-

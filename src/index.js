@@ -1,15 +1,16 @@
 import dotenv from "dotenv";
 import connectDB from "./db/dbConnect.js";
-dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
+dotenv.config();
+
+// Validate environment variables
+import { validateEnv } from "./config/validateEnv.js";
+validateEnv();
 
 // import  express app from  app.js file
-import app  from "./app.js";
-
+import app from "./app.js";
 
 // Connect to MongoDB
 connectDB();
-
-
 
 // Start server
 const PORT = process.env.PORT || 8000;

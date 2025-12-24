@@ -1,49 +1,43 @@
-import nodemailer from 'nodemailer';
-import mailgen from 'mailgen';
-import dotenv from 'dotenv';
-dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
-
-
-
-
+import nodemailer from "nodemailer";
+import mailgen from "mailgen";
+import dotenv from "dotenv";
+dotenv.config();
 
 const sendEmail = async ({ subject, to, mailGenContent }) => {
-   
   if (!subject || !to || !mailGenContent) {
     throw new Error("Please provide subject, recipient, and mailGenContent");
   }
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAILTRAP_SMTP_HOST,
-      port: process.env.MAILTRAP_SMTP_PORT,
-      secure: false,
-      auth: {
-        user: process.env.MAILTRAP_SMTP_USER,
-        pass: process.env.MAILTRAP_SMTP_PASS,
-      },
-    });
+  const transporter = nodemailer.createTransport({
+    host: process.env.MAILTRAP_SMTP_HOST,
+    port: process.env.MAILTRAP_SMTP_PORT,
+    secure: false,
+    auth: {
+      user: process.env.MAILTRAP_SMTP_USER,
+      pass: process.env.MAILTRAP_SMTP_PASS,
+    },
+  });
 
-   const mailGenerator = new mailgen({
-     theme: "default",
-     product: {
-       name: "Projectify App",
-       link: `http://localhost:${process.env.PORT}/`,
-     },
-   });
+  const mailGenerator = new mailgen({
+    theme: "default",
+    product: {
+      name: "Projectify App",
+      link: `http://localhost:${process.env.PORT}/`,
+    },
+  });
 
-    
-    // generate html + plain text
-    const emailHtml = mailGenerator.generate(mailGenContent);
-    const emailText = mailGenerator.generatePlaintext(mailGenContent);
+  // generate html + plain text
+  const emailHtml = mailGenerator.generate(mailGenContent);
+  const emailText = mailGenerator.generatePlaintext(mailGenContent);
 
-    const mailOptions = {
-      from: `"Projectify" <${process.env.MAILTRAP_SMTP_USER}>`,
-      to: to,
-      subject: subject,
-      html: emailHtml,
-      text: emailText,
-    };
+  const mailOptions = {
+    from: `"Projectify" <${process.env.MAILTRAP_SMTP_USER}>`,
+    to: to,
+    subject: subject,
+    html: emailHtml,
+    text: emailText,
+  };
 
-     try {
+  try {
     await transporter.sendMail(mailOptions);
     console.log(`✅ Email sent to ${to}`);
   } catch (err) {
@@ -51,8 +45,6 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
     throw err;
   }
 };
-
-
 
 const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
   return {
@@ -113,9 +105,8 @@ const emailVerificationMailGenContent = (username, emailVerificationUrl) => {
   };
 };
 
-
-export { forgetPasswordMailGenContent, emailVerificationMailGenContent, sendEmail}
-
-
-
-
+export {
+  forgetPasswordMailGenContent,
+  emailVerificationMailGenContent,
+  sendEmail,
+};

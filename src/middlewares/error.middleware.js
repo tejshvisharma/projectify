@@ -3,11 +3,18 @@ const errorHandler = (err, req, res, next) => {
   const message = err.message || "Something went wrong";
   const errors = err.errors || null;
 
-  res.status(statuscode).json({
+  const response = {
     success: false,
     message,
     errors,
-  });
+  };
+
+  // Only include stack trace in development
+  if (process.env.NODE_ENV !== "production") {
+    response.stack = err.stack;
+  }
+
+  res.status(statuscode).json(response);
 };
 
 export default errorHandler;

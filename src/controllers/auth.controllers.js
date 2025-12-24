@@ -14,7 +14,7 @@ import ApiResponse from "../utils/api-response.js";
 import dotenv from "dotenv";
 
 import ApiError from "../utils/api-error.js";
-import  jwt  from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 import bcrypt from "bcryptjs";
 
@@ -22,7 +22,7 @@ import crypto from "crypto";
 
 import { json } from "express";
 
-dotenv.config({ path: "C:/Users/ojshv/OneDrive/Desktop/projectify/.env" });
+dotenv.config();
 
 const registerUser = asyncHandler(async (req, res) => {
   const { email, username, password, fullName } = req.body;
@@ -268,10 +268,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
 
   const { newPassword } = req.body;
 
-  const hashedToken = await crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   const user = await User.findOne({
     forgetPasswordToken: hashedToken,
@@ -297,22 +294,23 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
         "Password has been reset successfully. Please login with new password.",
       ),
     );
-
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  
-  const incoming = req.cookies?.refreshToken;
+  const incomingRefreshToken = req.cookies?.refreshToken;
 
-  if(!incoming){
-    throw new ApiError(401, "Missing refresh Token in cookies");
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Missing refresh token in cookies");
   }
 
   let decoded;
   try {
-    decoded = jwt.verify(incoming, process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+    );
   } catch (err) {
-    // Clear cookies
+    // Clear cookies on invalid token
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -327,24 +325,30 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid or expired refresh token");
   }
 
+  // Use _id from decoded token, not email
+  const user = await User.findById(decoded._id);
 
-  const email = decoded.email;
-
-  const user = await User.findOne({ email });
-
-  if(!user){
-    throw new ApiError(401, "user not found");
+  if (!user) {
+    throw new ApiError(401, "User not found");
   }
 
-  if ( incoming !== user.refreshToken ) {
-    throw new ApiError(401, "Refresh token is not valid");
-   }
+  // Verify the refresh token matches what's stored (reuse detection)
+  if (incomingRefreshToken !== user.refreshToken) {
+    // Possible token reuse attack - invalidate stored token
+    user.refreshToken = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(
+      403,
+      "Refresh token reuse detected. Please log in again.",
+    );
+  }
 
+  // Generate new tokens (token rotation)
   const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
+  const newRefreshToken = user.generateRefreshToken();
 
-  user.refreshToken = refreshToken;
-
+  // Store new refresh token
+  user.refreshToken = newRefreshToken;
   await user.save({ validateBeforeSave: false });
 
   const cookieOptions = {
@@ -355,14 +359,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   };
 
   res.cookie("accessToken", accessToken, cookieOptions);
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie("refreshToken", newRefreshToken, {
     ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
-  return res.status(200)
-          .json(new ApiResponse(200, null, "Access token refresh successfully"))
- 
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Access token refreshed successfully"));
 });
 
 const forgotPasswordRequest = asyncHandler(async (req, res) => {
@@ -420,7 +424,8 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  return res.status(200)
+  return res
+    .status(200)
     .json(new ApiResponse(200, null, "user password changed successfully"));
 });
 

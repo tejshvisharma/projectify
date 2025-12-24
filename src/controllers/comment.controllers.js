@@ -8,112 +8,119 @@ import { project as Project } from "../models/project.models.js";
 import { projectMember as ProjectMember } from "../models/projectmember.models.js";
 
 export const createComment = asyncHandler(async (req, res) => {
-    const { taskId } = req.params;
-    const { content, attachments = [] } = req.body;
+  const { taskId } = req.params;
+  const { content, attachments = [] } = req.body;
 
-    if (!content || content.trim().length === 0) {
-        throw new ApiError(400, "Content is required");
-    }
+  if (!content || content.trim().length === 0) {
+    throw new ApiError(400, "Content is required");
+  }
 
-    const task = await Task.findById(taskId);
-    if (!task) throw new ApiError(404, "Task not found");
+  const task = await Task.findById(taskId);
+  if (!task) throw new ApiError(404, "Task not found");
 
-    const projectId = task.project;
+  // Verify task belongs to the project in params
+  if (String(task.project) !== String(req.params.projectId)) {
+    throw new ApiError(400, "Task does not belong to this project");
+  }
 
-    const isMember = await ProjectMember.findOne({
-        project: projectId,
-        user: req.user._id,
-    });
-    if (!isMember)
-        throw new ApiError(403, "You are not a member of this project");
+  // RBAC already validated by middleware
 
-    const comment = await Comment.create({
-        content,
-        task: taskId,
-        user: req.user._id,
-        attachments,
-    });
+  const comment = await Comment.create({
+    content,
+    task: taskId,
+    user: req.user._id,
+    attachments,
+  });
 
-    const populatedComment = await Comment.findById(comment._id).populate(
-        "user",
-        "_id username avatar",
-    );
+  const populatedComment = await Comment.findById(comment._id).populate(
+    "user",
+    "_id username avatar",
+  );
 
-    return res
-        .status(201)
-        .json(
-            new ApiResponse(
-                201,
-                populatedComment,
-                "Comment added successfully"),
-        );
+  return res
+    .status(201)
+    .json(new ApiResponse(201, populatedComment, "Comment added successfully"));
 });
 
 export const getComments = asyncHandler(async (req, res) => {
-    const { taskId } = req.params;
+  const { taskId } = req.params;
 
-    const task = await Task.findById(taskId);
-    if (!task) {
-        throw new ApiError(404, "Task not found");
-    }
+  const task = await Task.findById(taskId);
+  if (!task) {
+    throw new ApiError(404, "Task not found");
+  }
 
-    const comments = await Comment.find({ task: taskId })
-        .populate("user", "_id username avatar")
-        .sort({ createdAt: -1 });
+  // Verify task belongs to the project in params
+  if (String(task.project) !== String(req.params.projectId)) {
+    throw new ApiError(400, "Task does not belong to this project");
+  }
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200,
-            comments,
-            "Comments fetched successfully"
-        ));
+  // RBAC already validated by middleware
+
+  const comments = await Comment.find({ task: taskId })
+    .populate("user", "_id username avatar")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, comments, "Comments fetched successfully"));
 });
 
 export const updateComment = asyncHandler(async (req, res) => {
-    const { commentId } = req.params;
-    const { content, attachments } = req.body;
+  const { commentId } = req.params;
+  const { content, attachments } = req.body;
 
-    const comment = await Comment.findById(commentId);
-    if (!comment) throw new ApiError(404, "Comment not found");
+  const comment = await Comment.findById(commentId).populate("task");
+  if (!comment) throw new ApiError(404, "Comment not found");
 
-    if (String(comment.user) !== String(req.user._id)) {
-        throw new ApiError(403, "You can only update your own comment");
-    }
+  // Verify comment belongs to a task in this project
+  if (String(comment.task.project) !== String(req.params.projectId)) {
+    throw new ApiError(400, "Comment does not belong to this project");
+  }
 
-    if (content) comment.content = content;
-    if (attachments) comment.attachments = attachments;
+  // Only author can update
+  if (String(comment.user) !== String(req.user._id)) {
+    throw new ApiError(403, "You can only update your own comment");
+  }
 
-    await comment.save();
+  // RBAC already validated by middleware
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200,
-            comment,
-            "Comment updated successfully"
-        ));
+  if (content) comment.content = content;
+  if (attachments) comment.attachments = attachments;
+
+  await comment.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, comment, "Comment updated successfully"));
 });
 
 export const deleteComment = asyncHandler(async (req, res) => {
-    const { commentId } = req.params;
+  const { commentId } = req.params;
 
-    const comment = await Comment.findById(commentId).populate("task");
-    if (!comment) throw new ApiError(404, "Comment not found");
+  const comment = await Comment.findById(commentId).populate("task");
+  if (!comment) throw new ApiError(404, "Comment not found");
 
-    // Only author or project creator can delete
-    const project = await Project.findById(comment.task.project);
-    if (
-        String(comment.user) !== String(req.user._id) &&
-        String(project.createdBy) !== String(req.user._id)
-    ) {
-        throw new ApiError(403, "You are not allowed to delete this comment");
-    }
+  // Verify comment belongs to a task in this project
+  if (String(comment.task.project) !== String(req.params.projectId)) {
+    throw new ApiError(400, "Comment does not belong to this project");
+  }
 
-    await comment.deleteOne();
+  // RBAC already validated by middleware
+  // Only author or project owner can delete
+  if (
+    String(comment.user) !== String(req.user._id) &&
+    req.membership.role !== "owner"
+  ) {
+    throw new ApiError(
+      403,
+      "You can only delete your own comment unless you are project owner",
+    );
+  }
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200,
-            null,
-            "Comment deleted successfully"
-        ));
+  await comment.deleteOne();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Comment deleted successfully"));
 });

@@ -6,7 +6,6 @@ import User from "../models/user.models.js";
 import { project as Project } from "../models/project.models.js";
 import { note as Note } from "../models/notes.models.js";
 
-
 const extractMentions = (content) => {
   const mentionRegex = /@(\w+)/g;
   const matches = content.match(mentionRegex);
@@ -74,24 +73,19 @@ const updateNoteAndSave = asyncHandler(async (noteId, content, userId) => {
 });
 
 export const createNote = asyncHandler(async (req, res) => {
-    const { projectId } = req.params;
-    const { content } = req.body;
+  const { projectId } = req.params;
+  const { content } = req.body;
 
   const existingProject = await Project.findById(projectId);
   if (!existingProject) throw new ApiError(404, "Project not found");
 
-   const createdBy = req.user._id;
+  const createdBy = req.user._id;
 
-   const newNote = await createNoteAndSave(projectId, createdBy, content);
+  const newNote = await createNoteAndSave(projectId, createdBy, content);
 
-   return res
-        .status(201)
-        .json(new ApiResponse(
-            201,
-            newNote,
-            "Note created successfully"
-        ));
-
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newNote, "Note created successfully"));
 });
 
 export const getNotes = asyncHandler(async (req, res) => {
@@ -119,20 +113,18 @@ export const getNoteById = asyncHandler(async (req, res) => {
   const existingProject = await Project.findById(projectId);
   if (!existingProject) throw new ApiError(404, "Project not found");
 
- const noteDoc = await Note
-   .findById(noteId)
-   .populate("createdBy", "avatar username email")
-   .populate("mentions.user", "avatar username email")
-   .populate("project", "name");
+  const noteDoc = await Note.findById(noteId)
+    .populate("createdBy", "avatar username email")
+    .populate("mentions.user", "avatar username email")
+    .populate("project", "name");
 
- if (!noteDoc) {
-   throw new ApiError(404,"Note not found");
- }
+  if (!noteDoc) {
+    throw new ApiError(404, "Note not found");
+  }
 
-return res
-  .status(200)
-  .json(new ApiResponse(200, noteDoc, "Project note fetched successfully"));
-
+  return res
+    .status(200)
+    .json(new ApiResponse(200, noteDoc, "Project note fetched successfully"));
 });
 
 export const updateNote = asyncHandler(async (req, res) => {
@@ -142,42 +134,33 @@ export const updateNote = asyncHandler(async (req, res) => {
 
   const userId = req.user._id;
 
-  const updatedNote = updateNoteAndSave(noteId, content, userId);
+  const updatedNote = await updateNoteAndSave(noteId, content, userId);
 
   return res
     .status(200)
-    .json(new ApiResponse(
-        200,
-        updatedNote,
-        "Note updated successfully"
-    ));
+    .json(new ApiResponse(200, updatedNote, "Note updated successfully"));
 });
 
 export const deleteNote = asyncHandler(async (req, res) => {
-    const { noteId } = req.params;
+  const { noteId } = req.params;
 
-    const userId = req.user._id;
+  const userId = req.user._id;
 
-    const noteDoc = await Note.findById(noteId);
+  const noteDoc = await Note.findById(noteId);
 
-    if (!noteDoc) {
-      throw new Error("Note not found");
-    }
+  if (!noteDoc) {
+    throw new Error("Note not found");
+  }
 
-    if (noteDoc.createdBy.toString() !== userId.toString()) {
-      throw new Error("Unauthorized: Only the creator can delete this Note");
-    }
+  if (noteDoc.createdBy.toString() !== userId.toString()) {
+    throw new Error("Unauthorized: Only the creator can delete this Note");
+  }
 
-    await Note.findByIdAndDelete(noteId);
+  await Note.findByIdAndDelete(noteId);
 
-    return res
-        .status(200)
-        .json(new ApiResponse(
-            200,
-            null,
-            "Note deleted successfully"
-        ))
-
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Note deleted successfully"));
 });
 
 export const getMyMentions = asyncHandler(async (req, res) => {
@@ -202,7 +185,3 @@ export const getMyMentions = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, notes, "Mentioning Notes fetched successfully"));
 });
-
-
-
-

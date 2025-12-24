@@ -1,12 +1,13 @@
 import { Router } from "express";
 import {
-    createSubTask,
-    getSubTask,
-    updateSubTask,
-    deleteSubTask,
+  createSubTask,
+  getSubTask,
+  updateSubTask,
+  deleteSubTask,
 } from "../controllers/subTask.controllers.js";
 import {
-    isLoggedIn
+  isLoggedIn,
+  validateProjectPermission,
 } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
@@ -18,29 +19,38 @@ import { PROJECT_ROLES } from "../utils/constants.js";
 
 const router = Router();
 
+// Subtasks are scoped to tasks, which are scoped to projects
+// We need projectId in the route to validate project membership
 router
-    .route("/:taskId")
-    .post(
-        isLoggedIn,
-        createSubTaskValidator(),
-        validate,
-        createSubTask,
-    )
-    .get(isLoggedIn, getSubTask);
+  .route("/:projectId/tasks/:taskId")
+  .post(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.EDITORS),
+    createSubTaskValidator(),
+    validate,
+    createSubTask,
+  )
+  .get(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.VIEWERS),
+    getSubTask,
+  );
 
 router
-    .route("/:SubTaskId")
-    .patch(
-        isLoggedIn,
-        updateSubTaskValidator(),
-        validate,
-        updateSubTask,
-    )
-    .delete(
-        isLoggedIn,
-        paginateSubTasksValidator(),
-        validate,
-        deleteSubTask,
-    );
+  .route("/:projectId/:SubTaskId")
+  .patch(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.EDITORS),
+    updateSubTaskValidator(),
+    validate,
+    updateSubTask,
+  )
+  .delete(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.EDITORS),
+    paginateSubTasksValidator(),
+    validate,
+    deleteSubTask,
+  );
 
 export default router;

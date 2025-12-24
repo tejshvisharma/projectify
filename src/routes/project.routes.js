@@ -9,7 +9,7 @@ import {
   addProjectMember,
   deleteProjectMember,
   getProjectMembers,
-  updateProjectMemberRole
+  updateProjectMemberRole,
 } from "../controllers/project.controllers.js";
 
 import {
@@ -27,7 +27,7 @@ import {
 
 import { validate } from "../middlewares/validate.middleware.js";
 
-import { PROJECT_ROLES } from "../utils/constants.js";
+import { PROJECT_ROLES, userRolesEnum } from "../utils/constants.js";
 
 import {
   createTask,
@@ -49,7 +49,10 @@ import {
   getNoteById,
 } from "../controllers/note.controllers.js";
 
-import { createNoteValidator, updateNoteValidator } from "../validators/notesValidators.js";
+import {
+  createNoteValidator,
+  updateNoteValidator,
+} from "../validators/notesValidators.js";
 
 import { uploadTaskAttachments } from "../middlewares/upload.middleware.js";
 
@@ -57,14 +60,23 @@ const router = Router();
 
 // for projects routing :
 
-router.route("/")
-  .post(isLoggedIn, createProjectValidator(), validate, createProject) 
-  .get(isLoggedIn, getProjects); 
+router
+  .route("/")
+  .post(isLoggedIn, createProjectValidator(), validate, createProject)
+  .get(isLoggedIn, getProjects);
 
 router
   .route("/:projectId")
-  .patch(isLoggedIn, validateProjectPermission(PROJECT_ROLES.MANAGEMENT), updateProject)
-  .delete(isLoggedIn, deleteProject);
+  .patch(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    updateProject,
+  )
+  .delete(
+    isLoggedIn,
+    validateProjectPermission([userRolesEnum.OWNER]),
+    deleteProject,
+  );
 
 // for project Member routing :
 router
@@ -81,13 +93,13 @@ router
     validate,
     addProjectMember,
   );
- 
+
 router
   .route("/:projectId/members/:memberId")
   .patch(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-    updateProjectMemberRoleValidator, 
+    updateProjectMemberRoleValidator,
     validate,
     updateProjectMemberRole,
   )
@@ -98,77 +110,73 @@ router
   );
 
 // for tasks routing :
-  router
-    .route("/:projectId/tasks")
-    .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getTasks)
-    .post(
-      isLoggedIn,
-      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-      uploadTaskAttachments.array("attachments", 5),
-      createTaskValidator(),
-      validate,
-      createTask,
-    );
+router
+  .route("/:projectId/tasks")
+  .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getTasks)
+  .post(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    uploadTaskAttachments.array("attachments", 5),
+    createTaskValidator(),
+    validate,
+    createTask,
+  );
 
-  router
-    .route("/:projectId/tasks/:taskId")
-    .patch(
-      isLoggedIn,
-      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-      uploadTaskAttachments.array("attachments", 5),
-      updateTaskValidator(),
-      validate,
-      updateTask,
-    )
-    .delete(
-      isLoggedIn,
-      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-      deleteTask,
-    );
+router
+  .route("/:projectId/tasks/:taskId")
+  .patch(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    uploadTaskAttachments.array("attachments", 5),
+    updateTaskValidator(),
+    validate,
+    updateTask,
+  )
+  .delete(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    deleteTask,
+  );
 
 // for notes routing :
 
-  router
-    .route("/:projectId/notes")
-    .get(
-      isLoggedIn,
-      validateProjectPermission([PROJECT_ROLES.VIEWERS]),
-      getNotes,
-    )
-    .post(
-      isLoggedIn,
-      validateProjectPermission([PROJECT_ROLES.MANAGEMENT]),
-      createNoteValidator(),
-      validate,
-      createNote,
-    );
+router
+  .route("/:projectId/notes")
+  .get(isLoggedIn, validateProjectPermission([PROJECT_ROLES.VIEWERS]), getNotes)
+  .post(
+    isLoggedIn,
+    validateProjectPermission([PROJECT_ROLES.MANAGEMENT]),
+    createNoteValidator(),
+    validate,
+    createNote,
+  );
 
-  router
-    .route("/:projectId/notes/:noteId")
-    .get(
-      isLoggedIn,
-      validateProjectPermission(PROJECT_ROLES.VIEWERS),
-      getNoteById,
-    )
-    .patch(
-      isLoggedIn,
-      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-      updateNoteValidator(),
-      validate,
-      updateNote,
-    )
-    .delete(
-      isLoggedIn,
-      validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-      validate,
-      deleteNote,
-    );
-
-  router
-   .route("/:projectId/notes/mentions/me")
-   .get(
+router
+  .route("/:projectId/notes/:noteId")
+  .get(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.VIEWERS),
-    getMyMentions
-    );
+    getNoteById,
+  )
+  .patch(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    updateNoteValidator(),
+    validate,
+    updateNote,
+  )
+  .delete(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    validate,
+    deleteNote,
+  );
+
+router
+  .route("/:projectId/notes/mentions/me")
+  .get(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.VIEWERS),
+    getMyMentions,
+  );
 export default router;

@@ -25,4 +25,8 @@ const commentSchema = new Schema(
   { timestamps: true },
 );
 
+// Indexes for frequently queried fields
+commentSchema.index({ task: 1, createdAt: -1 });
+commentSchema.index({ user: 1 });
+
 export const Comment = mongoose.model("comment", commentSchema);

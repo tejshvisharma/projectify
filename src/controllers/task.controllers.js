@@ -6,9 +6,12 @@ import User from "../models/user.models.js";
 import { projectMember as ProjectMember } from "../models/projectmember.models.js";
 import { userRolesEnum } from "../utils/constants.js";
 import { project as Project } from "../models/project.models.js";
-import {  task as Task } from "../models/task.models.js";
+import { task as Task } from "../models/task.models.js";
 import cloudinary from "../config/cloudinary.js";
-
+import {
+  parsePaginationParams,
+  createPaginationMeta,
+} from "../utils/pagination.js";
 
 export const createTask = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
@@ -82,23 +85,36 @@ export const createTask = asyncHandler(async (req, res) => {
 
 export const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
+  const { page, limit, skip } = parsePaginationParams(req.query);
 
   const existingProject = await Project.findById(projectId);
   if (!existingProject) throw new ApiError(404, "Project not found");
 
-  const allTasks = await Task.find({
-    project:  mongoose.Types.ObjectId(projectId),
-  })
-    .populate("createdBy", "_id username avatar")
-    .populate("assignedTo", "_id username avatar")
-    .sort({ createdAt: -1 })
-    .lean();
+  const filter = { project: mongoose.Types.ObjectId(projectId) };
+
+  const [total, allTasks] = await Promise.all([
+    Task.countDocuments(filter),
+    Task.find(filter)
+      .populate("createdBy", "_id username avatar")
+      .populate("assignedTo", "_id username avatar")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+  ]);
+
+  const meta = createPaginationMeta(page, limit, total);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, allTasks, "Project tasks fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { tasks: allTasks, meta },
+        "Project tasks fetched successfully",
+      ),
+    );
 });
-
 
 export const updateTask = asyncHandler(async (req, res) => {
   const { projectId, taskId } = req.params;
@@ -173,9 +189,6 @@ export const updateTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, populated, "Task updated successfully"));
 });
 
-
-
-
 export const deleteTask = asyncHandler(async (req, res) => {
   const { projectId, taskId } = req.params;
   const project = await Project.findById(projectId);
@@ -202,4 +215,3 @@ export const deleteTask = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, null, "Task deleted successfully"));
 });
-

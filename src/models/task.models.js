@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { availableTaskStatus, taskStatusEnums } from "../utils/constants.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import {
@@ -79,6 +79,10 @@ const taskSchema = new Schema(
   { timestamps: true },
 );
 
+// Indexes for frequently queried fields
+taskSchema.index({ project: 1, createdAt: -1 });
+taskSchema.index({ assignedTo: 1, status: 1 });
+taskSchema.index({ project: 1, status: 1 });
 
 taskSchema.pre(
   "deleteOne",
@@ -94,4 +98,4 @@ taskSchema.pre(
   }),
 );
 
-export const task = mongoose.model("Task",taskSchema);
+export const task = mongoose.model("Task", taskSchema);
