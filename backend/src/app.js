@@ -11,6 +11,30 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  // Log when the request arrives
+  console.log(
+    `\x1b[36m%s\x1b[0m`,
+    `---> [${new Date().toISOString()}] ${req.method} ${req.url}`,
+  );
+
+  // This listener triggers when the response is finished sending
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    const statusColor = res.statusCode >= 400 ? "\x1b[31m" : "\x1b[32m"; // Red for error, Green for success
+
+    console.log(
+      `${statusColor}%s\x1b[0m`,
+      `<--- [${res.statusCode}] ${req.method} ${req.originalUrl} - ${duration}ms`,
+    );
+  });
+
+  next();
+});
+
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.BASE_URL,
