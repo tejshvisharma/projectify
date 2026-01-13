@@ -80,7 +80,8 @@ const userSchema = new Schema(
       type: Date,
     },
     verificationEmailCount: {
-      Number,
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true },
