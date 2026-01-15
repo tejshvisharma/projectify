@@ -10,8 +10,10 @@ interface LoginCredentials {
 
 interface RegisterData {
     username: string;
+    fullName: string;
     email: string;
     password: string;
+    confirmPassword: string;
 }
 
 interface User {
@@ -62,13 +64,8 @@ export const useLoginMutation = () => {
 };
 
 export const useRegisterMutation = () => {
-    const setUser = useAuthStore((state) => state.setUser);
-
     return useMutation({
         mutationFn: register,
-        onSuccess: (data) => {
-            setUser(data.data.user);
-        },
     });
 };
 
