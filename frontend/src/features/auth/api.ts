@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
-
+import { LoginPayload, RegisterPayload, UserProfile } from "./types";
 // Types
 interface LoginCredentials {
     email: string;
@@ -87,4 +87,39 @@ export const useLogoutMutation = () => {
             window.location.href = '/login';
         },
     });
+};
+
+// for future use of implementations :
+export const authApi = {
+    register: (payload: RegisterPayload) =>
+        apiClient.post("/auth/register", payload),
+
+    verifyEmail: (token: string) =>
+        apiClient.get(`/auth/verify-email?token=${token}`),
+
+    resendVerification: (email: string) =>
+        apiClient.post("/auth/resend-verification", { email }),
+
+    login: (payload: LoginPayload) =>
+        apiClient.post("/auth/login", payload),
+
+    logout: () =>
+        apiClient.post("/auth/logout"),
+
+    refreshToken: () =>
+        apiClient.post("/auth/refresh-token"),
+
+    getProfile: async (): Promise<UserProfile> => {
+        const res = await apiClient.get("/auth/profile");
+        return res.data.data;
+    },
+
+    changePassword: (payload: { oldPassword: string; newPassword: string }) =>
+        apiClient.post("/auth/change-password", payload),
+
+    forgotPassword: (email: string) =>
+        apiClient.post("/auth/forgot-password", { email }),
+
+    resetPassword: (token: string, newPassword: string) =>
+        apiClient.post(`/auth/reset-password?token=${token}`, { newPassword }),
 };

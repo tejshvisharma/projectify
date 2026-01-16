@@ -8,6 +8,21 @@ export interface User {
     role: string;
 }
 
+export interface UserProfile {
+    _id: string;
+    username: string;
+    email: string;
+    fullName: string;
+    role: string;
+    avatar?: {
+        url: string;
+        localPath?: string;
+    };
+    isEmailVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
