@@ -51,28 +51,32 @@ apiClient.interceptors.response.use(
             _retry?: boolean;
         };
 
-        // If no response OR not 401 → just reject
         if (!error.response || error.response.status !== 401) {
             return Promise.reject(error);
         }
 
-        // If request already retried → logout
-        if (originalRequest._retry) {
-            useAuthStore.getState().clearUser();
+        const url = originalRequest.url ?? '';
+
+        // 🚫 SKIP refresh logic for auth-related endpoints
+        if (
+            url.includes('/auth/profile') ||
+            url.includes('/auth/login') ||
+            url.includes('/auth/register') ||
+            url.includes('/auth/refresh-token')
+        ) {
             return Promise.reject(error);
         }
 
-        // Mark request as retried
+        if (originalRequest._retry) {
+            return Promise.reject(error);
+        }
+
         originalRequest._retry = true;
 
-        // If refresh already in progress → queue request
         if (isRefreshing) {
             return new Promise((resolve, reject) => {
                 failedQueue.push({
-                    resolve: (tokenRefreshed) => {
-                        // After refresh, retry the original request
-                        resolve(apiClient(originalRequest));
-                    },
+                    resolve: () => resolve(apiClient(originalRequest)),
                     reject,
                 });
             });
@@ -81,22 +85,17 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-            // 🔁 Call refresh token endpoint
-            await apiClient.post("/auth/refresh-token");
-
-            processQueue(null, true);
-            // After refresh, retry the original request
+            await apiClient.post('/auth/refresh-token');
+            processQueue(null);
             return apiClient(originalRequest);
         } catch (refreshError) {
-            processQueue(refreshError, false);
-
-            // Refresh failed → logout user
-            useAuthStore.getState().clearUser();
+            processQueue(refreshError);
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;
         }
-    },
+    }
 );
+
 
 export default apiClient;

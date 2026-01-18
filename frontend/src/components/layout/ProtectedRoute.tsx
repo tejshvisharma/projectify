@@ -1,12 +1,12 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { Spinner } from '@/components/ui/spinner';
 
-
 export function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
 
-  // Show loading state while checking authentication
+  // Still checking auth → show spinner
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -15,11 +15,17 @@ export function ProtectedRoute() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Not authenticated → redirect immediately
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
-  // Render protected content
+  // Authenticated → render children
   return <Outlet />;
 }
