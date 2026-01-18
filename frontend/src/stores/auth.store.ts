@@ -40,7 +40,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     isAuthenticated: false,
-    isLoading: false, 
+    isLoading: true, // Start as loading until checkAuth completes
 
     setUser: (user: User) => {
         set({
@@ -59,13 +59,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     checkAuth: async () => {
-        set({ isLoading: true });
         try {
             // Call backend to verify auth status via HTTP-only cookie
-            console.log('🟡 checkAuth START');
             const response = await apiClient.get('/auth/profile');
             const user = response.data.data.user;
-            console.log('🟢 checkAuth SUCCESS', response.status);
+
             set({
                 user,
                 isAuthenticated: true,
@@ -73,7 +71,6 @@ export const useAuthStore = create<AuthState>((set) => ({
             });
         } catch (error) {
             // If check fails (401 or network error), user is not authenticated
-            console.log('🔴 checkAuth FAILED', error);
             set({
                 user: null,
                 isAuthenticated: false,
