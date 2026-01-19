@@ -1,9 +1,11 @@
 import { apiClient as api } from "../../lib/axios";
+import { useQuery } from "@tanstack/react-query";
 import {
     CreateProjectPayload,
     UpdateProjectPayload,
     Project,
-    ProjectsResponse,
+    ProjectsListResponse,
+    ApiResponse,
 } from "./types";
 
 export const projectsApi = {
@@ -15,7 +17,7 @@ export const projectsApi = {
     getProjects: async (
         page = 1,
         limit = 10
-    ): Promise<ProjectsResponse> => {
+    ): Promise<ProjectsListResponse> => {
         const res = await api.get("/projects", { params: { page, limit } });
         return res.data.data;
     },
@@ -30,4 +32,20 @@ export const projectsApi = {
 
     deleteProject: (projectId: string) =>
         api.delete(`/projects/${projectId}`),
+};
+
+
+
+export const useGetProjectsQuery = (page: number, limit: number) => {
+    return useQuery({
+        queryKey: ['projects', { page, limit }],
+        queryFn: async (): Promise<ProjectsListResponse> => {
+            const response = await api.get<ApiResponse<ProjectsListResponse>>(
+                `/projects?page=${page}&limit=${limit}`
+            );
+            return response.data.data;
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+    });
 };

@@ -1,7 +1,7 @@
 export interface Project {
     _id: string;
     name: string;
-    description: string;
+    description?: string;
     createdBy: string;
     endDate?: string;
     githubRepo?: string;
@@ -10,7 +10,7 @@ export interface Project {
     updatedAt: string;
 }
 
-export interface ProjectMeta {
+export interface ProjectsMeta {
     page: number;
     limit: number;
     totalItems: number;
@@ -19,9 +19,9 @@ export interface ProjectMeta {
     hasPrevPage: boolean;
 }
 
-export interface ProjectsResponse {
+export interface ProjectsListResponse {
     projects: Project[];
-    meta: ProjectMeta;
+    meta: ProjectsMeta;
 }
 
 export interface CreateProjectPayload {
@@ -31,5 +31,10 @@ export interface CreateProjectPayload {
     githubRepo?: string;
     tags?: string[];
 }
-
+export interface ApiResponse<T> {
+    statuscode: number;
+    success: boolean;
+    message: string;
+    data: T;
+}
 export type UpdateProjectPayload = Partial<CreateProjectPayload>;
