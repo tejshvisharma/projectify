@@ -5,6 +5,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 // Auth Pages
 import LoginPage from '@/features/auth/pages/LoginPage';
 import RegisterPage from '@/features/auth/pages/RegisterPage';
+import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 
 // Project Pages
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
@@ -28,6 +30,14 @@ export const router = createBrowserRouter([
   {
     path: '/register',
     element: <RegisterPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
   },
   // Protected routes
   {

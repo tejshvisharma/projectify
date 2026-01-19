@@ -16,7 +16,7 @@ export function ProtectedRoute() {
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  if (!isAuthenticated ) {
     return <Navigate to="/login" replace />;
   }
 

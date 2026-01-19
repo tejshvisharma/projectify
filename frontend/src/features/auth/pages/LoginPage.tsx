@@ -112,12 +112,17 @@ export default function LoginPage() {
             >
               {loginMutation.isPending ? 'Logging in...' : 'Login'}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:underline">
-                Register
+            <div className="flex flex-col items-center space-y-2 w-full">
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
               </Link>
-            </p>
+              <p className="text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-primary hover:underline">
+                  Register
+                </Link>
+              </p>
+            </div>
           </CardFooter>
         </form>
       </Card>
