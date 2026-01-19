@@ -1,4 +1,4 @@
-import api from "../../lib/axios";
+import { apiClient as api } from "../../lib/axios";
 import {
     CreateProjectPayload,
     UpdateProjectPayload,

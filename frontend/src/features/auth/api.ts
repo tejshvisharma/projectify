@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import apiClient from '@/lib/axios';
+import { apiClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { LoginPayload, RegisterPayload, UserProfile } from "./types";
 // Types
@@ -117,8 +117,21 @@ export const authApi = {
     changePassword: (payload: { oldPassword: string; newPassword: string }) =>
         apiClient.post("/auth/change-password", payload),
 
-    forgotPassword: (email: string) =>
-        apiClient.post("/auth/forgot-password", { email }),
+    forgotPassword: async (email: string) => {
+        try {
+            const res = await apiClient.post("/auth/forgot-password", { email });
+            if (res.data && res.data.success === false) {
+                // Simulate axios error for consistent error handling
+                const err: any = new Error(res.data.message || 'Failed to send reset link.');
+                err.response = { data: res.data };
+                throw err;
+            }
+            return res;
+        } catch (err: any) {
+            // If axios error, just throw
+            throw err;
+        }
+    },
 
     resetPassword: (token: string, newPassword: string) =>
         apiClient.post(`/auth/reset-password?token=${token}`, { newPassword }),

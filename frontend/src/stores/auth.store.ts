@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import apiClient from '@/lib/axios';
+import { authHydrationClient } from '@/lib/axios';
 
 export interface User {
     id: string;
@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     checkAuth: async () => {
         try {
             // Call backend to verify auth status via HTTP-only cookie
-            const response = await apiClient.get('/auth/profile');
+            const response = await authHydrationClient.get('/auth/profile');
             const user = response.data.data.user;
 
             set({
