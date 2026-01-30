@@ -6,7 +6,7 @@ dotenv.config();
 import User from "../models/user.models.js";
 
 import { projectMember } from "../models/projectmember.models.js";
-import { project as Project } from "../models/project.models.js";
+import Project from "../models/project.models.js";
 
 import mongoose from "mongoose";
 

@@ -6,7 +6,7 @@ import User from "../models/user.models.js";
 import { task as Task } from "../models/task.models.js";
 import { subTask } from "../models/subtask.models.js";
 import { projectMember as ProjectMember } from "../models/projectmember.models.js";
-import { project as Project } from "../models/project.models.js";
+import Project from "../models/project.models.js";
 
 export const createSubTask = asyncHandler(async (req, res) => {
   const { taskId } = req.params;

@@ -5,7 +5,7 @@ import ApiResponse from "../utils/api-response.js";
 import User from "../models/user.models.js";
 import { projectMember as ProjectMember } from "../models/projectmember.models.js";
 import { userRolesEnum } from "../utils/constants.js";
-import { project as Project } from "../models/project.models.js";
+import Project from "../models/project.models.js";
 import {
   parsePaginationParams,
   createPaginationMeta,
@@ -224,6 +224,9 @@ export const getProjects = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePaginationParams(req.query);
 
   const filter = { user: new mongoose.Types.ObjectId(req.user._id) };
+
+  console.log(mongoose.modelNames());
+
 
   const [total, memberships] = await Promise.all([
     ProjectMember.countDocuments(filter),

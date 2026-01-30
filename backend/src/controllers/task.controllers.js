@@ -5,7 +5,7 @@ import ApiResponse from "../utils/api-response.js";
 import User from "../models/user.models.js";
 import { projectMember as ProjectMember } from "../models/projectmember.models.js";
 import { userRolesEnum } from "../utils/constants.js";
-import { project as Project } from "../models/project.models.js";
+import Project from "../models/project.models.js";
 import { task as Task } from "../models/task.models.js";
 import cloudinary from "../config/cloudinary.js";
 import {
