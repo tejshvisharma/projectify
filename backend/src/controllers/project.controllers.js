@@ -220,12 +220,44 @@ export const createProject = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newProject, "Project created successfully"));
 });
 
+/**
+ * @desc    Get single project by ID
+ * @route   GET /api/v1/projects/:projectId
+ * @access  Protected User
+ */
+export const getProjectById = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    throw new ApiError(400, "Invalid project ID");
+  }
+
+  const isMember = await ProjectMember.findOne({
+    project: new mongoose.Types.ObjectId(projectId),
+    user: new mongoose.Types.ObjectId(req.user._id),
+  });
+
+  if (!isMember) {
+    throw new ApiError(403, "You are not a member of this project");
+  }
+
+  const project = await Project.findById(projectId)
+    .populate("createdBy", "_id username avatar");
+    
+  if (!project) {
+    throw new ApiError(404, "Project not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, project, "Project fetched successfully")
+  );
+});
+
 export const getProjects = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePaginationParams(req.query);
 
   const filter = { user: new mongoose.Types.ObjectId(req.user._id) };
 
-  console.log(mongoose.modelNames());
 
 
   const [total, memberships] = await Promise.all([

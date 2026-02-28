@@ -8,6 +8,7 @@ import {
 import {
   addProjectMember,
   deleteProjectMember,
+  getProjectById,
   getProjectMembers,
   updateProjectMemberRole,
 } from "../controllers/project.controllers.js";
@@ -67,6 +68,7 @@ router
 
 router
   .route("/:projectId")
+  .get(isLoggedIn, getProjectById)
   .patch(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
