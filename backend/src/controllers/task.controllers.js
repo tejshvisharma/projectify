@@ -87,10 +87,16 @@ export const getTasks = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const { page, limit, skip } = parsePaginationParams(req.query);
 
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    throw new ApiError(400, "Invalid project ID format");
+  }
   const existingProject = await Project.findById(projectId);
-  if (!existingProject) throw new ApiError(404, "Project not found");
 
-  const filter = { project: mongoose.Types.ObjectId(projectId) };
+  if (!existingProject) {
+    throw new ApiError(404, "Project not found");
+  }
+
+  const filter = { project: projectId };
 
   const [total, allTasks] = await Promise.all([
     Task.countDocuments(filter),
