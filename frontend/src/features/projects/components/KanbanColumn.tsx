@@ -13,6 +13,7 @@ interface KanbanColumnProps {
   isLoading: boolean;
   projectId: string;
   onAddTask: () => void;
+  onTaskClick: (task: Task) => void;
 }
 
 export default function KanbanColumn({
@@ -23,6 +24,7 @@ export default function KanbanColumn({
   isLoading,
   projectId,
   onAddTask,
+  onTaskClick,
 }: KanbanColumnProps) {
   return (
     <div className={`rounded-xl p-4 space-y-3 min-h-[400px] ${colorClass}`}>
@@ -59,6 +61,7 @@ export default function KanbanColumn({
           key={task._id}
           task={task}
           projectId={projectId}
+          onTaskClick={onTaskClick}
         />
       ))}
 

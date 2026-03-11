@@ -5,6 +5,7 @@ import { useGetProjectTasksQuery } from '../api';
 import type { KanbanData, Task, TaskStatus } from '../types';
 import KanbanColumn from './KanbanColumn';
 import TaskCreateModal from './TaskCreateModal';
+import TaskDetailModal from './TaskDetailModal';
 
 // Column configuration — order and display names
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
@@ -20,6 +21,7 @@ interface KanbanBoardProps {
 export default function KanbanBoard({ projectId }: KanbanBoardProps) {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const { data: tasks = [], isLoading, error } = useGetProjectTasksQuery(projectId);
 
@@ -60,6 +62,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
             isLoading={isLoading}
             projectId={projectId}
             onAddTask={() => handleAddTask(col.id)}
+            onTaskClick={setSelectedTask}
           />
         ))}
       </div>
@@ -70,6 +73,13 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         onClose={() => setCreateModalOpen(false)}
         projectId={projectId}
         defaultStatus={defaultStatus}
+      />
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        task={selectedTask}
+        projectId={projectId}
+        onClose={() => setSelectedTask(null)}
       />
     </>
   );

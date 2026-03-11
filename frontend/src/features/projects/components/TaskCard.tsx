@@ -16,10 +16,11 @@ const PRIORITY_CONFIG = {
 interface TaskCardProps {
   task: Task;
   projectId: string;
+  onTaskClick: (task: Task) => void;
 }
 
-export default function TaskCard({ task, projectId }: TaskCardProps) {
-  const [open, setOpen] = useState(false);
+export default function TaskCard({ task, projectId, onTaskClick }: TaskCardProps) {
+  
   const priority = PRIORITY_CONFIG[task.priority];
 
   const formatDate = (dateString?: string) => {
@@ -38,7 +39,7 @@ export default function TaskCard({ task, projectId }: TaskCardProps) {
   return (
     <Card
       className="cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 bg-white"
-      onClick={() => setOpen(true)}
+      onClick={() => onTaskClick(task)} 
     >
       <CardContent className="p-3 space-y-2.5">
         {/* Task title */}
