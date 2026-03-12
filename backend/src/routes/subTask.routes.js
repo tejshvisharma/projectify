@@ -48,8 +48,6 @@ router
   .delete(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.EDITORS),
-    paginateSubTasksValidator(),
-    validate,
     deleteSubTask,
   );
 

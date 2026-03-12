@@ -7,7 +7,7 @@ export const createSubTaskValidator = () => [
 ];
 
 export const updateSubTaskValidator = () => [
-  param("subTaskId")
+  param("SubTaskId")
     .notEmpty()
     .isMongoId()
     .withMessage("Valid subTaskId required"),

@@ -16,7 +16,7 @@ import {
   Clock,
 } from 'lucide-react';
 import type { Task } from '../types';
-
+import SubTasksPanel from './SubTasksPanel';
 // ─── Visual config maps ────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   todo:        { label: 'To Do',       className: 'bg-slate-100 text-slate-700'  },
@@ -249,12 +249,10 @@ export default function TaskDetailModal({
 
             {/* SubTasks placeholder — Block 3 will fill this */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Subtasks
-              </p>
-              <p className="text-sm text-muted-foreground italic">
-                Coming soon...
-              </p>
+              <SubTasksPanel
+                projectId={projectId}
+                taskId={task._id}
+              />
             </div>
 
           </div>

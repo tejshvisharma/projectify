@@ -9,6 +9,8 @@ import type {
     CreateTaskPayload,
     UpdateTaskPayload,
     ProjectsMeta,
+    SubTask,           
+    CreateSubTaskPayload,
 } from './types';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -21,6 +23,8 @@ export const projectKeys = {
     detail: (id: string) => [...projectKeys.details(), id] as const,
     members: (id: string) => [...projectKeys.detail(id), 'members'] as const,
     tasks: (id: string) => [...projectKeys.detail(id), 'tasks'] as const,
+    subtasks: (projectId: string, taskId: string) =>
+        [...projectKeys.detail(projectId), 'tasks', taskId, 'subtasks'] as const,
 };
 
 export function useGetProjectsQuery(page: number, limit: number) {
@@ -149,6 +153,83 @@ export function useDeleteTaskMutation(projectId: string) {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: projectKeys.tasks(projectId) });
+        },
+    });
+}
+
+// Fetch subtasks for a specific task
+export function useGetSubTasksQuery(projectId: string, taskId: string) {
+    return useQuery({
+        queryKey: projectKeys.subtasks(projectId, taskId),
+        queryFn: async () => {
+            const response = await apiClient.get
+                <ApiResponse<{ items: SubTask[]; meta: ProjectsMeta } >>
+       (`/subtasks/${projectId}/tasks/${taskId}?limit=100`);
+            return response.data.data.items;
+        },
+        enabled: !!projectId && !!taskId, // only run when both IDs exist
+    });
+}
+
+// Create a new subtask
+export function useCreateSubTaskMutation(projectId: string, taskId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: CreateSubTaskPayload) => {
+            const response = await apiClient.post<ApiResponse<SubTask>>(
+                `/subtasks/${projectId}/tasks/${taskId}`,
+                payload
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.subtasks(projectId, taskId),
+            });
+        },
+    });
+}
+
+// Toggle subtask complete/incomplete
+export function useUpdateSubTaskMutation(projectId: string, taskId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            subTaskId,
+            isCompleted,
+        }: {
+            subTaskId: string;
+            isCompleted: boolean;
+        }) => {
+            const response = await apiClient.patch<ApiResponse<SubTask>>(
+                `/subtasks/${projectId}/${subTaskId}`,
+                { isCompleted }
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.subtasks(projectId, taskId),
+            });
+        },
+    });
+}
+
+// Delete a subtask
+export function useDeleteSubTaskMutation(projectId: string, taskId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (subTaskId: string) => {
+            await apiClient.delete(`/subtasks/${projectId}/${subTaskId}`);
+            return subTaskId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.subtasks(projectId, taskId),
+            });
         },
     });
 }
