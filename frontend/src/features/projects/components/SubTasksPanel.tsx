@@ -115,6 +115,7 @@ export default function SubTasksPanel({ projectId, taskId }: SubTasksPanelProps)
               <button
                 onClick={() => handleToggle(subtask._id, subtask.isCompleted)}
                 disabled={updateSubTask.isPending}
+                aria-label={subtask.isCompleted ? 'Mark incomplete' : 'Mark complete'}
                 className="shrink-0 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
               >
                 {subtask.isCompleted ? (
@@ -136,6 +137,7 @@ export default function SubTasksPanel({ projectId, taskId }: SubTasksPanelProps)
               {/* Delete button — only visible on hover */}
               <button
                 onClick={() => handleDelete(subtask._id)}
+                aria-label="Delete subtask"
                 disabled={deleteSubTask.isPending}
                 className="shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all disabled:opacity-50"
               >

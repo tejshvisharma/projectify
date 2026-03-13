@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import type { Task } from '../types';
 import SubTasksPanel from './SubTasksPanel';
+import CommentsPanel from '@/features/comments/components/commentsPanel';
+
 // ─── Visual config maps ────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   todo:        { label: 'To Do',       className: 'bg-slate-100 text-slate-700'  },
@@ -139,14 +141,12 @@ export default function TaskDetailModal({
 
             <Separator />
 
-            {/* Comments placeholder — Block 4 will fill this */}
+            {/* Comments placeholder */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Comments
-              </h3>
-              <p className="text-sm text-muted-foreground italic">
-                Coming soon...
-              </p>
+              <CommentsPanel
+                projectId={projectId}
+                taskId={task._id}
+              />
             </div>
 
           </div>

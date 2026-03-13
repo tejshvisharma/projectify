@@ -1,13 +1,6 @@
 import { create } from 'zustand';
 import { authHydrationClient } from '@/lib/axios';
 
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: string;
-}
-
 export interface UserProfile {
     _id: string;
     username: string;
@@ -24,10 +17,10 @@ export interface UserProfile {
 }
 
 interface AuthState {
-    user: User | null;
+    user: UserProfile | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    setUser: (user: User) => void;
+    setUser: (user: UserProfile) => void;
     clearUser: () => void;
     checkAuth: () => Promise<void>;
 }
@@ -42,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     isAuthenticated: false,
     isLoading: true, // Start as loading until checkAuth completes
 
-    setUser: (user: User) => {
+    setUser: (user: UserProfile) => {
         set({
             user,
             isAuthenticated: true,
@@ -62,7 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             // Call backend to verify auth status via HTTP-only cookie
             const response = await authHydrationClient.get('/auth/profile');
-            const user = response.data.data.user;
+            const user = response.data.data;
 
             set({
                 user,

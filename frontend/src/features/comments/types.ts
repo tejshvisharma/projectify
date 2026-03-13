@@ -1,17 +1,19 @@
-import { apiClient as api} from "../../lib/axios";
+import type { UserSummary } from '@/features/projects/types';
 
-export const commentsApi = {
-    createComment: (projectId: string, taskId: string, payload: any) =>
-        api.post(`/comments/${projectId}/tasks/${taskId}`, payload),
+export interface Comment {
+    _id: string;
+    content: string;
+    task: string;
+    user: UserSummary;
+    attachments: string[];
+    createdAt: string;
+    updatedAt: string;
+}
 
-    getComments: async (projectId: string, taskId: string) => {
-        const res = await api.get(`/comments/${projectId}/tasks/${taskId}`);
-        return res.data.data;
-    },
+export interface CreateCommentPayload {
+    content: string;
+}
 
-    updateComment: (projectId: string, commentId: string, payload: any) =>
-        api.patch(`/comments/${projectId}/edit/${commentId}`, payload),
-
-    deleteComment: (projectId: string, commentId: string) =>
-        api.delete(`/comments/${projectId}/edit/${commentId}`),
-};
+export interface UpdateCommentPayload {
+    content: string;
+}
