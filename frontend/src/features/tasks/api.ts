@@ -1,40 +1,58 @@
-import { apiClient as api } from "../../lib/axios";
-import { TasksResponse, Task } from "./types";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/axios';
+import { projectKeys } from '@/features/projects/api';
+import type { ApiResponse } from '@/features/projects/types';
+import type { Task } from './types';
 
-export const tasksApi = {
-    getTasks: async (
-        projectId: string,
-        page = 1,
-        limit = 10
-    ): Promise<TasksResponse> => {
-        const res = await api.get(`/projects/${projectId}/tasks`, {
-            params: { page, limit },
-        });
-        return res.data.data;
-    },
+// Add attachment(s) to a task
+export function useAddAttachmentMutation(projectId: string, taskId: string) {
+    const queryClient = useQueryClient();
 
-    createTask: async (projectId: string, formData: FormData): Promise<Task> => {
-        const res = await api.post(
-            `/projects/${projectId}/tasks`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
-        );
-        return res.data.data;
-    },
+    return useMutation({
+        mutationFn: async (files: File[]) => {
+            // Attachments require multipart/form-data
+            const formData = new FormData();
+            files.forEach((file) => {
+                formData.append('attachments', file);
+            });
 
-    updateTask: async (
-        projectId: string,
-        taskId: string,
-        formData: FormData
-    ): Promise<Task> => {
-        const res = await api.patch(
-            `/projects/${projectId}/tasks/${taskId}`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
-        );
-        return res.data.data;
-    },
+            const response = await apiClient.patch<ApiResponse<Task>>(
+                `/projects/${projectId}/tasks/${taskId}`,
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            // Invalidate tasks cache so the board + modal both refresh
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.tasks(projectId),
+            });
+        },
+    });
+}
 
-    deleteTask: (projectId: string, taskId: string) =>
-        api.delete(`/projects/${projectId}/tasks/${taskId}`),
-};
+// Remove a single attachment by its public_id
+export function useRemoveAttachmentMutation(projectId: string, taskId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (publicId: string) => {
+            const formData = new FormData();
+            // API expects removeFiles as JSON string array
+            formData.append('removeFiles', JSON.stringify([publicId]));
+
+            const response = await apiClient.patch<ApiResponse<Task>>(
+                `/projects/${projectId}/tasks/${taskId}`,
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.tasks(projectId),
+            });
+        },
+    });
+}

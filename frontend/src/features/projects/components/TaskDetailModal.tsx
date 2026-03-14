@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import type { Task } from '../types';
 import SubTasksPanel from './SubTasksPanel';
-import CommentsPanel from '@/features/comments/components/commentsPanel';
-
+import CommentsPanel from '@/features/comments/components/CommentsPanel';
+import AttachmentsPanel from '@/features/tasks/components/AttachmentsPanel';
+import { useGetProjectMembersQuery } from '../api';
+import { useAuthStore } from '@/stores/auth.store';
 // ─── Visual config maps ────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   todo:        { label: 'To Do',       className: 'bg-slate-100 text-slate-700'  },
@@ -68,6 +70,14 @@ export default function TaskDetailModal({
   const status     = STATUS_CONFIG[task.status];
   const priority   = PRIORITY_CONFIG[task.priority];
   const difficulty = DIFFICULTY_CONFIG[task.difficulty];
+
+  const currentUser = useAuthStore((s) => s.user);
+  const { data: members = [] } = useGetProjectMembersQuery(projectId);
+
+  const currentMember = members.find((m) => m.user._id === currentUser?._id);
+  const canManage = ['owner', 'project_admin'].includes(
+  currentMember?.role ?? ''
+);
 
   return (
     <Dialog open={!!task} onOpenChange={onClose}>
@@ -131,12 +141,13 @@ export default function TaskDetailModal({
 
             {/* Attachments placeholder — Block 5 will fill this */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Attachments
-              </h3>
-              <p className="text-sm text-muted-foreground italic">
-                Coming soon...
-              </p>
+              <AttachmentsPanel
+                projectId={projectId}
+                taskId={task._id}
+                attachments={task.attachments}
+                canManage={canManage}
+              />
+              
             </div>
 
             <Separator />
