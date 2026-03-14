@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useGetProjectTasksQuery } from '../api';
 import type { KanbanData, Task, TaskStatus } from '../types';
 import KanbanColumn from './KanbanColumn';
-import TaskCreateModal from './TaskCreateModal';
+import TaskCreateModal from '@/features/tasks/components/TaskCreateModal';
 import TaskDetailModal from './TaskDetailModal';
 
 // Column configuration — order and display names
@@ -16,9 +16,10 @@ const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
 
 interface KanbanBoardProps {
   projectId: string;
+  projectEndDate?: string;
 }
 
-export default function KanbanBoard({ projectId }: KanbanBoardProps) {
+export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardProps) {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -73,6 +74,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         onClose={() => setCreateModalOpen(false)}
         projectId={projectId}
         defaultStatus={defaultStatus}
+        projectEndDate={projectEndDate}
       />
 
       {/* Task Detail Modal */}

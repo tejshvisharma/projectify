@@ -82,7 +82,10 @@ export default function ProjectDetailsPage() {
 
         {/* Kanban Board Tab */}
         <TabsContent value="board" className="mt-6">
-          <KanbanBoard projectId={projectId} />
+          <KanbanBoard 
+          projectId={projectId} 
+          projectEndDate={project.endDate}
+          />
         </TabsContent>
 
         {/* Tasks List Tab — coming in next step */}

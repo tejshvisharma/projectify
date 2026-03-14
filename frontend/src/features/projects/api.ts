@@ -88,13 +88,20 @@ export function useCreateTaskMutation(projectId: string) {
 
     return useMutation({
         mutationFn: async (payload: CreateTaskPayload) => {
-            // Tasks use multipart/form-data per the API docs
             const formData = new FormData();
-            Object.entries(payload).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                    formData.append(key, String(value));
-                }
-            });
+
+            // Append each field only if it has a value
+            formData.append('title', payload.title);
+            formData.append('description', payload.description ?? '');
+            formData.append('assignedTo', payload.assignedTo);
+
+            if (payload.status) formData.append('status', payload.status);
+            if (payload.priority) formData.append('priority', payload.priority);
+            if (payload.difficulty) formData.append('difficulty', payload.difficulty);
+            if (payload.dueDate) formData.append('dueDate', payload.dueDate);
+
+            // Credits must be a string for FormData
+            formData.append('credits', String(payload.credits ?? 0));
 
             const response = await apiClient.post<ApiResponse<Task>>(
                 `/projects/${projectId}/tasks`,
@@ -104,8 +111,12 @@ export function useCreateTaskMutation(projectId: string) {
             return response.data.data;
         },
         onSuccess: () => {
-            // Invalidate tasks cache → React Query auto-refetches
-            queryClient.invalidateQueries({ queryKey: projectKeys.tasks(projectId) });
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.tasks(projectId),
+            });
+        },
+        onError: (error: any) => {
+            console.log('Create task error:', error.response?.data);
         },
     });
 }

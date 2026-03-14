@@ -35,3 +35,17 @@ export interface TasksResponse {
         hasPrevPage: boolean;
     };
 }
+export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
+export type TaskDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
+
+export interface CreateTaskPayload {
+    title: string;
+    description: string;
+    assignedTo: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    difficulty?: TaskDifficulty;
+    credits?: number;          
+    dueDate?: string;          
+}
