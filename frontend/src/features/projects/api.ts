@@ -9,7 +9,7 @@ import type {
     CreateTaskPayload,
     UpdateTaskPayload,
     ProjectsMeta,
-    SubTask,           
+    SubTask,
     CreateSubTaskPayload,
 } from './types';
 
@@ -32,8 +32,8 @@ export function useGetProjectsQuery(page: number, limit: number) {
         queryKey: projectKeys.list(page, limit),
         queryFn: async () => {
             const response = await apiClient.get
-            <ApiResponse < ProjectsListResponse >>
-       (`/projects?page=${page}&limit=${limit}`);
+                <ApiResponse<ProjectsListResponse>>
+                (`/projects?page=${page}&limit=${limit}`);
             return response.data.data;
         },
     });
@@ -74,11 +74,30 @@ export function useGetProjectTasksQuery(projectId: string) {
         queryFn: async () => {
             // Fetch up to 100 tasks (max allowed) for the Kanban board
             const response = await apiClient.get
-                <ApiResponse<{ tasks: Task[]; meta: ProjectsMeta } >
-      > (`/projects/${projectId}/tasks?limit=100`);
+                <ApiResponse<{ tasks: Task[]; meta: ProjectsMeta }>
+                >(`/projects/${projectId}/tasks?limit=100`);
             return response.data.data.tasks;
         },
         enabled: !!projectId,
+    });
+}
+
+export function useTaskFromCache(projectId: string, taskId: string) {
+    return useQuery({
+        queryKey: projectKeys.tasks(projectId),
+        queryFn: async () => {
+            // Same queryFn as useGetProjectTasksQuery
+            // React Query will NOT re-fetch if cache is still fresh
+            const response = await apiClient.get
+                <ApiResponse<{ tasks: Task[]; meta: unknown }>
+                >(`/projects/${projectId}/tasks?limit=100`);
+            return response.data.data.tasks;
+        },
+        // select picks just the one task we need from the full array
+        select: (tasks: Task[]) => tasks.find((t) => t._id === taskId),
+        enabled: !!projectId && !!taskId,
+        // Don't refetch just because modal opened
+        staleTime: 1000 * 60, // treat cache as fresh for 60 seconds
     });
 }
 
@@ -174,8 +193,8 @@ export function useGetSubTasksQuery(projectId: string, taskId: string) {
         queryKey: projectKeys.subtasks(projectId, taskId),
         queryFn: async () => {
             const response = await apiClient.get
-                <ApiResponse<{ items: SubTask[]; meta: ProjectsMeta } >>
-       (`/subtasks/${projectId}/tasks/${taskId}?limit=100`);
+                <ApiResponse<{ items: SubTask[]; meta: ProjectsMeta }>>
+                (`/subtasks/${projectId}/tasks/${taskId}?limit=100`);
             return response.data.data.items;
         },
         enabled: !!projectId && !!taskId, // only run when both IDs exist
