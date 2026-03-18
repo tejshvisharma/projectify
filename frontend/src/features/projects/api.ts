@@ -158,7 +158,6 @@ export function useUpdateTaskMutation(projectId: string) {
                     formData.append(key, String(value));
                 }
             });
-
             const response = await apiClient.patch<ApiResponse<Task>>(
                 `/projects/${projectId}/tasks/${taskId}`,
                 formData,
@@ -166,8 +165,57 @@ export function useUpdateTaskMutation(projectId: string) {
             );
             return response.data.data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: projectKeys.tasks(projectId) });
+
+        // ── Optimistic update ────────────────────────────────────────────────────
+        onMutate: async ({ taskId, payload }) => {
+            // Step 1: Cancel any in-flight refetches
+            // Prevents them from overwriting our optimistic update
+            await queryClient.cancelQueries({
+                queryKey: projectKeys.tasks(projectId),
+            });
+
+            // Step 2: Snapshot current cache value
+            // We need this to roll back if server fails
+            const previousTasks = queryClient.getQueryData<Task[]>(
+                projectKeys.tasks(projectId)
+            );
+
+            // Step 3: Optimistically update the cache RIGHT NOW
+            queryClient.setQueryData<Task[]>(
+                projectKeys.tasks(projectId),
+                (oldTasks) =>
+                    oldTasks?.map((task) => {
+                        if (task._id !== taskId) return task;
+                        const { assignedTo, removeFiles, ...safePayload } = payload;
+                        return {
+                            ...task,
+                            ...safePayload, // ← only safe fields that match Task type
+                        } as Task;        // ← explicit cast tells TypeScript "trust us"
+                    }) ?? []
+            );
+            // Step 4: Return snapshot so onError can roll back
+            return { previousTasks };
+        },
+
+        // ── Rollback on failure ──────────────────────────────────────────────────
+        onError: (error, variables, context) => {
+            // Server rejected — restore previous state
+            if (context?.previousTasks) {
+                queryClient.setQueryData(
+                    projectKeys.tasks(projectId),
+                    context.previousTasks
+                );
+            }
+            console.error('Task update failed, rolled back:', error);
+        },
+
+        // ── Confirm with server data on success ──────────────────────────────────
+        onSettled: () => {
+            // Always sync with server after mutation settles
+            // Ensures our optimistic update matches server reality
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.tasks(projectId),
+            });
         },
     });
 }
@@ -228,18 +276,54 @@ export function useUpdateSubTaskMutation(projectId: string, taskId: string) {
     return useMutation({
         mutationFn: async ({
             subTaskId,
+            title,
             isCompleted,
         }: {
             subTaskId: string;
+            title: string;
             isCompleted: boolean;
         }) => {
             const response = await apiClient.patch<ApiResponse<SubTask>>(
                 `/subtasks/${projectId}/${subTaskId}`,
-                { isCompleted }
+                { title, isCompleted }
             );
             return response.data.data;
         },
-        onSuccess: () => {
+
+        // ── Optimistic update ────────────────────────────────────────────────────
+        onMutate: async ({ subTaskId, isCompleted, title }) => {
+            await queryClient.cancelQueries({
+                queryKey: projectKeys.subtasks(projectId, taskId),
+            });
+
+            const previousSubTasks = queryClient.getQueryData<SubTask[]>(
+                projectKeys.subtasks(projectId, taskId)
+            );
+
+            // Flip the checkbox immediately
+            queryClient.setQueryData<SubTask[]>(
+                projectKeys.subtasks(projectId, taskId),
+                (old) =>
+                    old?.map((st) =>
+                        st._id === subTaskId
+                            ? { ...st, isCompleted, title }
+                            : st
+                    ) ?? []
+            );
+
+            return { previousSubTasks };
+        },
+
+        onError: (error, variables, context) => {
+            if (context?.previousSubTasks) {
+                queryClient.setQueryData(
+                    projectKeys.subtasks(projectId, taskId),
+                    context.previousSubTasks
+                );
+            }
+        },
+
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: projectKeys.subtasks(projectId, taskId),
             });

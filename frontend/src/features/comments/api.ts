@@ -39,7 +39,52 @@ export function useCreateCommentMutation(projectId: string, taskId: string) {
             );
             return response.data.data;
         },
-        onSuccess: () => {
+
+        // ── Optimistic update ────────────────────────────────────────────────────
+        onMutate: async (payload) => {
+            await queryClient.cancelQueries({
+                queryKey: commentKeys.list(projectId, taskId),
+            });
+
+            const previousComments = queryClient.getQueryData<Comment[]>(
+                commentKeys.list(projectId, taskId)
+            );
+
+            // Build a temporary comment that looks real
+            // It will be replaced by the server version on settle
+            const optimisticComment: Comment = {
+                _id: `temp-${Date.now()}`, // temporary ID
+                content: payload.content,
+                task: taskId,
+                user: {
+                    _id: 'temp',
+                    username: '...', // will be replaced by real data
+                    avatar: { url: '' },
+                },
+                attachments: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+
+            queryClient.setQueryData<Comment[]>(
+                commentKeys.list(projectId, taskId),
+                (old) => [...(old ?? []), optimisticComment]
+            );
+
+            return { previousComments };
+        },
+
+        onError: (error, variables, context) => {
+            if (context?.previousComments) {
+                queryClient.setQueryData(
+                    commentKeys.list(projectId, taskId),
+                    context.previousComments
+                );
+            }
+        },
+
+        // Replace temp comment with real server data
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: commentKeys.list(projectId, taskId),
             });
