@@ -8,6 +8,7 @@ import { AlertCircle } from 'lucide-react';
 import { useGetProjectQuery, useGetProjectMembersQuery } from '../api';
 import ProjectHeader from '../components/ProjectHeader';
 import KanbanBoard from '../components/KanbanBoard';
+import ProjectSettingsTab from '../components/ProjectSettingsTab';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -74,10 +75,11 @@ export default function ProjectDetailsPage() {
 
       {/* Tabs: Board / Tasks / Notes / Settings */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-md grid-cols-4">
           <TabsTrigger value="board">Board</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger> 
         </TabsList>
 
         {/* Kanban Board Tab */}
@@ -96,6 +98,12 @@ export default function ProjectDetailsPage() {
         {/* Notes Tab — coming in next step */}
         <TabsContent value="notes" className="mt-6">
           <p className="text-muted-foreground">Notes — coming soon</p>
+        </TabsContent>
+        <TabsContent value="settings" className="mt-6">
+        <ProjectSettingsTab
+          project={project}
+          projectId={projectId}
+        />
         </TabsContent>
       </Tabs>
     </div>

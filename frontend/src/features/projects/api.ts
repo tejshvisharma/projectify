@@ -88,6 +88,54 @@ export function useCreateProjectMutation() {
     });
 }
 
+// Update Project mutation 
+
+export function useUpdateProjectMutation(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: Partial<CreateProjectPayload>) => {
+            const response = await apiClient.patch<ApiResponse<Project>>(
+                `/projects/${projectId}`,
+                payload
+            );
+            return response.data.data;
+        },
+        onSuccess: (updatedProject) => {
+            // Update the specific project in cache
+            queryClient.setQueryData(
+                projectKeys.detail(projectId),
+                updatedProject
+            );
+            // Also invalidate lists so ProjectsListPage reflects changes
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.lists(),
+            });
+        },
+    });
+}
+
+// Delete Projects Mutations
+export function useDeleteProjectMutation(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async () => {
+            await apiClient.delete(`/projects/${projectId}`);
+        },
+        onSuccess: () => {
+            // Remove from all project list caches
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.lists(),
+            });
+            // Remove the specific project from cache
+            queryClient.removeQueries({
+                queryKey: projectKeys.detail(projectId),
+            });
+        },
+    });
+}
+
 // Fetch project tasks (all, unpaginated for Kanban — or paginated for list view)
 export function useGetProjectTasksQuery(projectId: string) {
     return useQuery({

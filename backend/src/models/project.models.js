@@ -29,28 +29,34 @@ const projectSchema = new Schema(
 projectSchema.pre(
   "deleteOne",
   { document: true, query: false },
-  asyncHandler(async function (next)  {
+  async function () {
+   
     const projectId = this._id;
 
     // Delete all members of this project
     await mongoose.model("projectMember").deleteMany({ project: projectId });
 
     // Find all tasks of this project
-    const tasks = await mongoose.model("task").find({ project: projectId });
+    const tasks = await mongoose.model("Task").find({ project: projectId });
+    //                                       ^^^^  ← consistent casing
 
-    // Delete all comments of each task
+    // Delete all comments and subtasks of each task
     const taskIds = tasks.map((t) => t._id);
     if (taskIds.length > 0) {
       await mongoose.model("comment").deleteMany({ task: { $in: taskIds } });
+      await mongoose.model("subTask").deleteMany({ task: { $in: taskIds } });
+    
     }
 
     // Delete tasks themselves
     await mongoose.model("Task").deleteMany({ project: projectId });
+   
 
     // Delete all Notes of this project
     await mongoose.model("note").deleteMany({ project: projectId });
-    next();
-  }),
+
+   
+  },
 );
 
 
