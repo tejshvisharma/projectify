@@ -26,7 +26,7 @@ export interface ProjectsListResponse {
 
 export interface CreateProjectPayload {
     name: string;
-    description: string;
+    description?: string;
     endDate?: string;
     githubRepo?: string;
     tags?: string[];

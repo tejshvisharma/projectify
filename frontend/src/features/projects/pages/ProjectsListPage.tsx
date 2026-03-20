@@ -16,9 +16,11 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Project, ApiResponse } from '../types';
+import CreateProjectModal from '../components/CreateProjectModal';
 
 export default function ProjectsListPage() {
   const [page, setPage] = useState(1);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const limit = 9;
   const queryClient = useQueryClient();
 
@@ -70,7 +72,7 @@ export default function ProjectsListPage() {
             Manage and organize your projects
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Project
         </Button>
@@ -221,6 +223,10 @@ export default function ProjectsListPage() {
           )}
         </>
       )}
+       <CreateProjectModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+      />
     </div>
   );
 }

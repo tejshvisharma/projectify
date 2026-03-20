@@ -11,6 +11,7 @@ import type {
     ProjectsMeta,
     SubTask,
     CreateSubTaskPayload,
+    CreateProjectPayload,
 } from './types';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -64,6 +65,26 @@ export function useGetProjectMembersQuery(projectId: string) {
             return response.data.data;
         },
         enabled: !!projectId,
+    });
+}
+// Create Project Mutation
+export function useCreateProjectMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: CreateProjectPayload) => {
+            const response = await apiClient.post<ApiResponse<Project>>(
+                '/projects',
+                payload
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            // Invalidate all project lists so ProjectsListPage refetches
+            queryClient.invalidateQueries({
+                queryKey: projectKeys.lists(),
+            });
+        },
     });
 }
 
