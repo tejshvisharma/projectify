@@ -144,10 +144,14 @@ router
 
 router
   .route("/:projectId/notes")
-  .get(isLoggedIn, validateProjectPermission([PROJECT_ROLES.VIEWERS]), getNotes)
+  .get(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.VIEWERS),
+    getNotes,
+  )
   .post(
     isLoggedIn,
-    validateProjectPermission([PROJECT_ROLES.MANAGEMENT]),
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     createNoteValidator(),
     validate,
     createNote,

@@ -9,6 +9,7 @@ import { useGetProjectQuery, useGetProjectMembersQuery } from '../api';
 import ProjectHeader from '../components/ProjectHeader';
 import KanbanBoard from '../components/KanbanBoard';
 import ProjectSettingsTab from '../components/ProjectSettingsTab';
+import NotesPanel from '@/features/notes/components/NotesPanel';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -97,7 +98,7 @@ export default function ProjectDetailsPage() {
 
         {/* Notes Tab — coming in next step */}
         <TabsContent value="notes" className="mt-6">
-          <p className="text-muted-foreground">Notes — coming soon</p>
+          <NotesPanel projectId={projectId} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
         <ProjectSettingsTab

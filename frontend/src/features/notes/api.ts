@@ -1,27 +1,104 @@
-import { apiClient as api } from "../../lib/axios";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/axios';
+import type { ApiResponse } from '@/features/projects/types';
+import type { Note, CreateNotePayload } from './types';
 
-export const notesApi = {
-    createNote: (projectId: string, payload: { content: string }) =>
-        api.post(`/projects/${projectId}/notes`, payload),
-
-    getProjectNotes: async (projectId: string) => {
-        const res = await api.get(`/projects/${projectId}/notes`);
-        return res.data.data;
-    },
-
-    getNoteById: async (projectId: string, noteId: string) => {
-        const res = await api.get(`/projects/${projectId}/notes/${noteId}`);
-        return res.data.data;
-    },
-
-    updateNote: (projectId: string, noteId: string, payload: { content: string }) =>
-        api.patch(`/projects/${projectId}/notes/${noteId}`, payload),
-
-    deleteNote: (projectId: string, noteId: string) =>
-        api.delete(`/projects/${projectId}/notes/${noteId}`),
-
-    getMyMentions: async (projectId: string) => {
-        const res = await api.get(`/projects/${projectId}/notes/mentions/me`);
-        return res.data.data;
-    },
+// ─── Query Keys ───────────────────────────────────────────────────────────────
+export const noteKeys = {
+    all: ['notes'] as const,
+    list: (projectId: string) =>
+        [...noteKeys.all, projectId] as const,
+    mentions: (projectId: string) =>
+        [...noteKeys.list(projectId), 'mentions'] as const,
 };
+
+// ─── Fetch all notes ──────────────────────────────────────────────────────────
+export function useGetNotesQuery(projectId: string) {
+    return useQuery({
+        queryKey: noteKeys.list(projectId),
+        queryFn: async () => {
+            const response = await apiClient.get<ApiResponse<Note[]>>(
+                `/projects/${projectId}/notes`
+            );
+            return response.data.data;
+        },
+        enabled: !!projectId,
+    });
+}
+
+// ─── Fetch notes where current user is mentioned ──────────────────────────────
+export function useGetMyMentionsQuery(projectId: string) {
+    return useQuery({
+        queryKey: noteKeys.mentions(projectId),
+        queryFn: async () => {
+            const response = await apiClient.get<ApiResponse<Note[]>>(
+                `/projects/${projectId}/notes/mentions/me`
+            );
+            return response.data.data;
+        },
+        enabled: !!projectId,
+    });
+}
+
+// ─── Create note ──────────────────────────────────────────────────────────────
+export function useCreateNoteMutation(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: CreateNotePayload) => {
+            const response = await apiClient.post<ApiResponse<Note>>(
+                `/projects/${projectId}/notes`,
+                payload
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: noteKeys.list(projectId),
+            });
+        },
+    });
+}
+
+// ─── Update note ──────────────────────────────────────────────────────────────
+export function useUpdateNoteMutation(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            noteId,
+            content,
+        }: {
+            noteId: string;
+            content: string;
+        }) => {
+            const response = await apiClient.patch<ApiResponse<Note>>(
+                `/projects/${projectId}/notes/${noteId}`,
+                { content }
+            );
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: noteKeys.list(projectId),
+            });
+        },
+    });
+}
+
+// ─── Delete note ──────────────────────────────────────────────────────────────
+export function useDeleteNoteMutation(projectId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (noteId: string) => {
+            await apiClient.delete(`/projects/${projectId}/notes/${noteId}`);
+            return noteId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: noteKeys.list(projectId),
+            });
+        },
+    });
+}
