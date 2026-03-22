@@ -13,6 +13,7 @@ import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
 import ProfilePage from '@/features/auth/pages/ProfilePage';
 import LandingPage from '@/pages/LandingPage';
+import { PublicRoute } from '@/components/layout/PublicRoute';
 
 /**
  * Application routing configuration using React Router v6
@@ -21,9 +22,17 @@ import LandingPage from '@/pages/LandingPage';
  */
 export const router = createBrowserRouter([
   {
-  path: '/',
-  element: <LandingPage />,
+    path: '/',
+    element: <LandingPage />,
   },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
+  },
+  {
+    element: <PublicRoute />,
+    children: [
+
   // Public routes
   {
     path: '/login',
@@ -37,10 +46,10 @@ export const router = createBrowserRouter([
     path: '/forgot-password',
     element: <ForgotPasswordPage />,
   },
-  {
-    path: '/reset-password',
-    element: <ResetPasswordPage />,
+    ],
   },
+  
+  
   // Protected routes
   {
     element: <ProtectedRoute />,
