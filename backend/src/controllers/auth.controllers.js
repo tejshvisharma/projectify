@@ -22,6 +22,8 @@ import crypto from "crypto";
 
 import { json } from "express";
 
+import cloudinary from "../config/cloudinary.js";
+
 dotenv.config();
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -441,6 +443,78 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, userProfile, "User profile fetched successfully"),
     );
+});
+
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { fullName, username } = req.body;
+  const userId = req.user._id;
+
+  // Check username uniqueness if being changed
+  if (username) {
+    const existing = await User.findOne({
+      username,
+      _id: { $ne: userId }, // exclude current user
+    });
+    if (existing) {
+      throw new ApiError(409, "Username already taken");
+    }
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        ...(fullName && { fullName }),
+        ...(username && { username }),
+      },
+    },
+    { new: true }, // return updated document
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Profile updated successfully"));
+});
+
+
+export const updateAvatar = asyncHandler(async (req, res) => {
+  // CloudinaryStorage puts the result directly on req.file
+  if (!req.file) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+
+  // req.file from CloudinaryStorage contains:
+  // req.file.path      → Cloudinary URL
+  // req.file.filename  → public_id
+  const avatarUrl = req.file.path;
+  const avatarPublicId = req.file.filename;
+
+  // Get current user to delete old avatar from Cloudinary
+  const currentUser = await User.findById(req.user._id);
+
+  // Delete old avatar from Cloudinary if it exists
+  if (currentUser?.avatar?.public_id) {
+    await cloudinary.uploader.destroy(currentUser.avatar.public_id);
+  }
+
+  // Update user with new avatar
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        avatar: {
+          url: avatarUrl,
+          public_id: avatarPublicId, // ← store for future deletion
+          localPath: "",
+        },
+      },
+    },
+    { new: true },
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Avatar updated successfully"));
 });
 
 export {

@@ -259,6 +259,62 @@ Content-Type: application/json
   "data": null
 }
 ```
+### Update Profile
+```http
+PATCH /auth/update-profile
+Authorization: Bearer 
+Content-Type: application/json
+
+{
+  "fullName": "John Doe Updated",
+  "username": "johndoe_new"
+}
+```
+
+**Response (200):**
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "_id": "676a...",
+    "username": "johndoe_new",
+    "email": "john@example.com",
+    "fullName": "John Doe Updated",
+    "role": "user",
+    "avatar": { "url": "https://..." },
+    "isEmailVerified": true,
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+}
+```
+
+### Update Avatar
+```http
+PATCH /auth/update-avatar
+Authorization: Bearer 
+Content-Type: multipart/form-data
+
+avatar=
+```
+
+**Response (200):**
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Avatar updated successfully",
+  "data": {
+    "_id": "676a...",
+    "avatar": {
+      "url": "https://cloudinary.com/...",
+      "localPath": ""
+    }
+  }
+}
+```
 
 ---
 

@@ -133,6 +133,23 @@ const userResetForgottenPasswordValidator = () => {
   ];
 };
 
+ const updateProfileValidator = () => [
+  body("fullName")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage("Full name must be at least 2 characters"),
+
+  body("username")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 3 })
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage("Username can only contain letters, numbers and underscores"),
+];
+
 const createProjectValidator = () => {
   return [
     body("name").notEmpty().withMessage("Project Name is required"),
@@ -237,4 +254,5 @@ export {
   resendVerificationValidator,
   deleteMemberToProjectValidator,
   updateProjectMemberRoleValidator,
+  updateProfileValidator,
 };

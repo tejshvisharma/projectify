@@ -10,7 +10,9 @@ import {
   resetForgottenPassword,
   forgotPasswordRequest,
   refreshAccessToken,
-  changeCurrentPassword
+  changeCurrentPassword,
+  updateProfile,
+  updateAvatar,
 } from "../controllers/auth.controllers.js";
 
 import {
@@ -19,9 +21,11 @@ import {
   userLoginValidator,
   userForgotPasswordValidator,
   userResetForgottenPasswordValidator,
-  userChangeCurrentPasswordValidator
-  
+  userChangeCurrentPasswordValidator,
+  updateProfileValidator
 } from "../validators/auth.validators.js";
+
+import { uploadAvatar } from "../middlewares/upload.middleware.js";
 
 import { validate } from "../middlewares/validate.middleware.js";
 
@@ -60,5 +64,20 @@ router
 
 
 router.route("/refresh-token").post(refreshAccessToken);
+
+router.patch(
+  "/update-profile",
+  isLoggedIn,
+  updateProfileValidator(),
+  validate,
+  updateProfile,
+);
+
+router.patch(
+  "/update-avatar",
+  isLoggedIn,
+  uploadAvatar.single("avatar"),
+  updateAvatar,
+);
   export default router
 

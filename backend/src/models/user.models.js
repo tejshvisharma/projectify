@@ -13,13 +13,17 @@ import { GLOBAL_ROLES_LIST } from "../utils/constants.js";
 const userSchema = new Schema(
   {
     avatar: {
-      type: {
-        url: String,
-        localPath: String,
+      url: {
+        type: String,
+        default: '',
       },
-      default: {
-        url: `https://placehold.co/600x400`,
-        localPath: "",
+      public_id: {
+        type: String,
+        default: '',
+      },
+      localPath: {
+        type: String,
+        default: '',
       },
     },
     username: {
