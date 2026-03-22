@@ -12,6 +12,7 @@ import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
 import ProfilePage from '@/features/auth/pages/ProfilePage';
+import LandingPage from '@/pages/LandingPage';
 
 /**
  * Application routing configuration using React Router v6
@@ -20,8 +21,8 @@ import ProfilePage from '@/features/auth/pages/ProfilePage';
  */
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <Navigate to="/projects" replace />,
+  path: '/',
+  element: <LandingPage />,
   },
   // Public routes
   {
