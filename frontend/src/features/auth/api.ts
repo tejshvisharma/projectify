@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { LoginPayload, RegisterPayload, UserProfile } from "./types";
@@ -42,10 +42,6 @@ const register = async (data: RegisterData): Promise<AuthResponse> => {
     return response.data;
 };
 
-const getProfile = async (): Promise<User> => {
-    const response = await apiClient.get('/auth/profile');
-    return response.data.data.user;
-};
 
 const logout = async (): Promise<void> => {
     await apiClient.post('/auth/logout');
@@ -69,13 +65,7 @@ export const useRegisterMutation = () => {
     });
 };
 
-export const useProfileQuery = () => {
-    return useQuery({
-        queryKey: ['profile'],
-        queryFn: getProfile,
-        enabled: false, // Only fetch when explicitly called
-    });
-};
+
 
 export const useLogoutMutation = () => {
     const clearUser = useAuthStore((state) => state.clearUser);
@@ -136,3 +126,93 @@ export const authApi = {
     resetPassword: (token: string, newPassword: string) =>
         apiClient.post(`/auth/reset-password?token=${token}`, { newPassword }),
 };
+
+interface ApiResponse<T> {
+    statuscode: number;
+    success: boolean;
+    message: string;
+    data: T;
+}
+
+// ─── Query Keys ───────────────────────────────────────────────────────────────
+export const authKeys = {
+    profile: ['auth', 'profile'] as const,
+};
+
+// ─── Fetch fresh profile ──────────────────────────────────────────────────────
+export function useProfileQuery() {
+    return useQuery({
+        queryKey: authKeys.profile,
+        queryFn: async () => {
+            const response = await apiClient.get<ApiResponse<UserProfile>>(
+                '/auth/profile'
+            );
+            return response.data.data;
+        },
+    });
+}
+
+// ─── Update profile (fullName + username) ────────────────────────────────────
+export function useUpdateProfileMutation() {
+    const queryClient = useQueryClient();
+    const setUser = useAuthStore((s) => s.setUser);
+
+    return useMutation({
+        mutationFn: async (payload: {
+            fullName?: string;
+            username?: string;
+        }) => {
+            const response = await apiClient.patch<ApiResponse<UserProfile>>(
+                '/auth/update-profile',
+                payload
+            );
+            return response.data.data;
+        },
+        onSuccess: (updatedUser) => {
+            // Update React Query cache
+            queryClient.setQueryData(authKeys.profile, updatedUser);
+            
+            setUser(updatedUser);
+        },
+    });
+}
+
+// ─── Update avatar ────────────────────────────────────────────────────────────
+export function useUpdateAvatarMutation() {
+    const queryClient = useQueryClient();
+    const setUser = useAuthStore((s) => s.setUser);
+
+    return useMutation({
+        mutationFn: async (file: File) => {
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const response = await apiClient.patch<ApiResponse<UserProfile>>(
+                '/auth/update-avatar',
+                formData,
+                { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+            return response.data.data;
+        },
+        onSuccess: (updatedUser) => {
+            queryClient.setQueryData(authKeys.profile, updatedUser);
+            setUser(updatedUser);
+        },
+    });
+}
+
+// ─── Change password ──────────────────────────────────────────────────────────
+export function useChangePasswordMutation() {
+    return useMutation({
+        mutationFn: async (payload: {
+            oldPassword: string;
+            newPassword: string;
+        }) => {
+            const response = await apiClient.post<ApiResponse<null>>(
+                '/auth/change-password',
+                payload
+            );
+            return response.data;
+        },
+    });
+}

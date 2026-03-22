@@ -11,6 +11,7 @@ import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 // Project Pages
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
+import ProfilePage from '@/features/auth/pages/ProfilePage';
 
 /**
  * Application routing configuration using React Router v6
@@ -54,6 +55,10 @@ export const router = createBrowserRouter([
             path: '/projects/:projectId',
             element: <ProjectDetailsPage />,
           },
+          {
+            path: '/profile',
+            element: <ProfilePage />,
+          }
         ],
       },
     ],
