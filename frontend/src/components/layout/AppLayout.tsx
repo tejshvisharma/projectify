@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, LogOut, Menu } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogoutMutation } from '@/features/auth/api';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useThemeStore } from '@/stores/theme.store';
 /**
  * AppLayout component for protected routes
  * - Includes sidebar with navigation
@@ -25,10 +26,12 @@ export function AppLayout() {
   const user = useAuthStore((state) => state.user);
   const logoutMutation = useLogoutMutation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
+  const { isDark, toggleTheme } = useThemeStore();
   const handleLogout = () => {
     logoutMutation.mutate();
   };
+
+
 
   return (
     <div className="flex h-screen bg-background">
@@ -140,11 +143,21 @@ export function AppLayout() {
         <header className="flex h-16 items-center justify-between border-b bg-card px-6">
           <div>
             <h2 className="text-lg font-semibold">Welcome back, {user?.username}</h2>
-            <p className="text-sm text-muted-foreground">
-              Role: <span className="capitalize">{user?.role}</span>
-            </p>
+            
           </div>
           <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="h-9 w-9"
+          >
+            {isDark
+              ? <Sun className="h-4 w-4" />
+              : <Moon className="h-4 w-4" />
+            }
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

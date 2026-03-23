@@ -68,7 +68,7 @@ export default function ProjectHeader({
               </a>
             </Button>
           )}
-          <Button size="sm">Edit Project</Button>
+          
         </div>
       </div>
 

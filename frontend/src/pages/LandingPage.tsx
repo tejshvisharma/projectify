@@ -8,20 +8,10 @@ import PricingSection from '@/components/landing/PricingSection';
 import TechStackSection from '@/components/landing/TechStackSection';
 import CtaSection from '@/components/landing/CtaSection';
 import Footer from '@/components/landing/Footer';
+import { useThemeStore } from '@/stores/theme.store';
 
 export default function LandingPage() {
-  const [isDark, setIsDark] = useState(false);
-
-  // Apply dark class to html element
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => setIsDark((v) => !v);
+  const { isDark, toggleTheme } = useThemeStore();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
