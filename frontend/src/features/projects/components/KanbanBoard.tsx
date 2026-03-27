@@ -18,10 +18,11 @@ import TaskDetailModal from './TaskDetailModal';
 import TaskCard from './TaskCard';
 
 // Column configuration — order and display names
-const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
-  { id: 'todo', label: 'To Do', color: 'bg-slate-100' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-50' },
-  { id: 'done', label: 'Done', color: 'bg-green-50' },
+// Use Tailwind dark: variant classes for theme-aware colors
+const COLUMNS: { id: TaskStatus; label: string }[] = [
+  { id: 'todo', label: 'To Do' },
+  { id: 'in_progress', label: 'In Progress' },
+  { id: 'done', label: 'Done' },
 ];
 
 interface KanbanBoardProps {
@@ -37,7 +38,6 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
   const [localTasks, setLocalTasks]           = useState<Task[]>([]);
 
   // ── Track which column is currently being dragged over ────────────────────
-  // We compute this in the board and pass down as prop (fixes bug 1)
   const [overColumnId, setOverColumnId]       = useState<TaskStatus | null>(null);
 
   const { data: tasks = [], isLoading, error } = useGetProjectTasksQuery(projectId);
@@ -58,19 +58,15 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
   }), [displayTasks]);
 
   // ── Get column ID from a drag event's over object ─────────────────────────
-  // Checks both column IDs and task's attached columnId data
   const getTargetColumn = (over: DragEndEvent['over']): TaskStatus | null => {
     if (!over) return null;
 
     const overId = over.id as string;
 
-    // Dropped directly on a column (empty column case)
     if (COLUMNS.find((c) => c.id === overId)) {
       return overId as TaskStatus;
     }
 
-    // Dropped on a task — read the columnId from the task's sortable data
-    // This is what we attached in useSortable({ data: { columnId } })
     const columnId = over.data?.current?.columnId as TaskStatus | undefined;
     return columnId ?? null;
   };
@@ -96,10 +92,8 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
 
     if (!targetColumn) return;
 
-    // ✅ Fix 1: track which column we're over → passed as isOver prop
     setOverColumnId(targetColumn);
 
-    // ✅ Fix 3: move task to new column in local state immediately
     const activeTask = localTasks.find((t) => t._id === activeId);
     if (!activeTask) return;
     if (activeTask.status === targetColumn) return;
@@ -118,10 +112,10 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
     const { active, over } = event;
 
     setActiveTask(null);
-    setOverColumnId(null); // ← clear column highlight
+    setOverColumnId(null);
 
     if (!over) {
-      setLocalTasks([...tasks]); // reset on cancel
+      setLocalTasks([...tasks]);
       return;
     }
 
@@ -131,15 +125,12 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
 
     if (!originalTask || !localTask) return;
 
-    // ✅ Fix 4: status already correct in localTasks from dragOver
-    // fire mutation only if actually changed
     if (originalTask.status !== localTask.status) {
       updateTask.mutate({
         taskId,
         payload: { status: localTask.status },
       });
     }
-    // Do NOT reset localTasks here — keeps card in place (no flicker)
   };
 
   if (error) {
@@ -159,19 +150,19 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
+        {/* Responsive grid: 1 column on mobile, 3 columns on md+ */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {COLUMNS.map((col) => (
             <KanbanColumn
               key={col.id}
               columnId={col.id}
               label={col.label}
-              colorClass={col.color}
               tasks={kanbanData[col.id]}
               isLoading={isLoading}
               projectId={projectId}
               onAddTask={() => handleAddTask(col.id)}
               onTaskClick={setSelectedTask}
-              isOver={overColumnId === col.id} // ✅ Fix 1
+              isOver={overColumnId === col.id}
             />
           ))}
         </div>
@@ -189,6 +180,7 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
                 isDragging
               />
             </div>
+
           ) : null}
         </DragOverlay>
       </DndContext>

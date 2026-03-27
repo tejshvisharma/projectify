@@ -27,49 +27,61 @@ import { useThemeStore } from '@/stores/theme.store';
 // ── Nav link config ────────────────────────────────────────────────────────────
 const NAV_LINKS = [
   {
-    to:      '/projects',
-    label:   'Projects',
-    icon:    FolderKanban,
+    to: '/projects',
+    label: 'Projects',
+    icon: FolderKanban,
     enabled: true,
   },
   {
-    to:      '/dashboard',
-    label:   'Dashboard',
-    icon:    LayoutDashboard,
+    to: '/dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
     enabled: false, // disabled until built
   },
 ];
 
 export function AppLayout() {
-  const user            = useAuthStore((state) => state.user);
-  const logoutMutation  = useLogoutMutation();
+  const user = useAuthStore((state) => state.user);
+  const logoutMutation = useLogoutMutation();
   const { isDark, toggleTheme } = useThemeStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const location        = useLocation();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-background">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <aside className={cn(
-        'flex flex-col border-r bg-card transition-all duration-300 shrink-0',
-        isSidebarOpen ? 'w-64' : 'w-16'
-      )}>
+      <aside
+        className={cn(
+          'fixed z-40 top-0 left-0 h-full flex flex-col border-r bg-card transition-all duration-300',
 
+          // Desktop behavior
+          'md:static md:translate-x-0',
+          isSidebarOpen ? 'md:w-64' : 'md:w-16',
+
+          // Mobile behavior
+          'w-64',
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
         {/* Sidebar Header */}
         <div className="flex h-16 items-center justify-between border-b px-3">
           {isSidebarOpen && (
             <h1 className="text-xl font-bold text-primary ml-1">Projectify</h1>
           )}
+
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSidebarOpen((v) => !v)}
-            className={cn('shrink-0', isSidebarOpen ? 'ml-auto' : 'mx-auto')}
-            aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen((v) => !v)}
+          className={cn(
+            'shrink-0 hidden md:flex',
+            isSidebarOpen ? 'ml-auto' : 'mx-auto'
+          )}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
         </div>
 
         {/* Navigation Links */}
@@ -91,7 +103,10 @@ export function AppLayout() {
                   asChild={enabled}
                 >
                   {enabled ? (
-                    <Link to={to} className="flex items-center gap-3">
+                    <Link to={to}
+                      className="flex items-center gap-3"
+                      onClick={() => setIsMobileSidebarOpen(false)}
+                    >
                       <Icon className="h-5 w-5 shrink-0" />
                       {isSidebarOpen && <span>{label}</span>}
                     </Link>
@@ -124,14 +139,32 @@ export function AppLayout() {
         </nav>
 
       </aside>
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
 
       {/* ── Main Content ─────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
 
         {/* Top Navbar */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-6">
-          <div>
-            <h2 className="text-lg font-semibold">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 md:px-6">
+
+          <div className="flex items-center gap-2">
+
+            {/* Mobile hamburger */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+
+            <h2 className="text-sm md:text-lg font-semibold truncate">
               Welcome back, {user?.username}
             </h2>
           </div>
@@ -206,7 +239,7 @@ export function AppLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
           <Outlet />
         </main>
 
