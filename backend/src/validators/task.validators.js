@@ -54,3 +54,37 @@ export const updateTaskValidator = () => [
     .withMessage("Difficulty is invalid"),
   body("dueDate").optional().isISO8601().toDate(),
 ];
+
+export const verifyTaskValidator = () => {
+  return [
+    param("projectId")
+      .notEmpty()
+      .withMessage("projectId is required")
+      .isMongoId()
+      .withMessage("Invalid projectId"),
+
+    param("taskId")
+      .notEmpty()
+      .withMessage("taskId is required")
+      .isMongoId()
+      .withMessage("Invalid taskId"),
+
+    body("action")
+      .notEmpty()
+      .withMessage("Action is required")
+      .isIn(["approve", "reject"])
+      .withMessage('Action must be either approve or reject'),
+
+    body("reason")
+      .if(body("action").equals("reject"))
+      .notEmpty()
+      .withMessage("Reason is required when rejecting")
+      .isString()
+      .withMessage("Reason must be a string")
+      .trim()
+      .isLength({ min: 3 })
+      .withMessage("Reason must be at least 3 characters long"),
+
+    body("reason").optional().trim(),
+  ];
+};

@@ -53,7 +53,27 @@ const taskSchema = new Schema(
       type: String,
       enum: availableTaskStatus,
       default: taskStatusEnums.TODO,
-      required: true,
+    },
+    submission: {
+      comment: { type: String, default: "" },
+      attachments: { type: [attachmentSchema], default: [] },
+      submittedAt: Date,
+    },
+    verification: {
+      status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+      },
+      verifiedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+      verifiedAt: Date,
+    },
+    rejection: {
+      reason: String,
+      rejectedAt: Date,
     },
     attachments: {
       type: [attachmentSchema],

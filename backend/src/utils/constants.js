@@ -34,6 +34,7 @@ export const availableUserRoles = Object.values(userRolesEnum);
 export const taskStatusEnums = {
   TODO: "todo",
   IN_PROGRESS: "in_progress",
+  SUBMITTED: "submitted",
   DONE: "done",
 };
 export const availableTaskStatus = Object.values(taskStatusEnums);

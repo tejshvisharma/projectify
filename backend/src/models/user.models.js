@@ -56,6 +56,11 @@ const userSchema = new Schema(
       enum: GLOBAL_ROLES_LIST,
       default: GLOBAL_ROLES.USER,
     },
+    stats: {
+      totalCredits: { type: Number, default: 0 },
+      tasksCompleted: { type: Number, default: 0 },
+      onTimeTasks: { type: Number, default: 0 },
+    },
     isEmailVerified: {
       type: Boolean,
     },

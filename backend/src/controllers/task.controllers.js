@@ -134,6 +134,16 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (!task || String(task.project) !== String(projectId))
     throw new ApiError(404, "Task not found in this project");
 
+  if (changes.status === "done") {
+    throw new ApiError(
+      403,
+      'Status done can only be set via the verify endpoint',
+    );
+  }
+  
+  if (changes.status === "submitted") {
+    throw new ApiError(403, "Use the /submit endpoint to submit a task");
+  }
   // ✅ Remove requested files from Cloudinary and DB
   if (removeFiles.length > 0) {
     const remainingAttachments = task.attachments.filter(

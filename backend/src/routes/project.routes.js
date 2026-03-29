@@ -39,6 +39,7 @@ import {
 import {
   createTaskValidator,
   updateTaskValidator,
+  verifyTaskValidator,
 } from "../validators/task.validators.js";
 
 import {
@@ -56,6 +57,7 @@ import {
 } from "../validators/notesValidators.js";
 
 import { uploadTaskAttachments } from "../middlewares/upload.middleware.js";
+import { submitTask, verifyTask } from "../controllers/task.submit-verify.controller.js";
 
 const router = Router();
 
@@ -140,7 +142,25 @@ router
     deleteTask,
   );
 
-// for notes routing :
+router
+  .route("/:projectId/tasks/:taskId/submit")
+  .patch(
+  isLoggedIn,
+  validateProjectPermission(PROJECT_ROLES.EDITORS), // ensures user is a member at all
+  uploadTaskAttachments.array("attachments", 5),
+  submitTask,
+  );
+
+router
+  .route("/:projectId/tasks/:taskId/verify")
+  .patch(
+  isLoggedIn,
+  validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+  verifyTaskValidator(),
+  verifyTask, 
+ );
+
+  // for notes routing:
 
 router
   .route("/:projectId/notes")
