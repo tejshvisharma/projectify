@@ -203,7 +203,7 @@ export default function TaskCreateModal({
                 <SelectContent>
                   <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
                 </SelectContent>
               </Select>
             </div>

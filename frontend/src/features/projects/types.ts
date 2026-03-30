@@ -38,7 +38,7 @@ export interface ApiResponse<T> {
     data: T;
 }
 export type UpdateProjectPayload = Partial<CreateProjectPayload>;
-export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskStatus = 'todo' | 'in_progress' | 'submitted' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TaskDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 export type ProjectRole = 'viewer' | 'member' | 'project_admin' | 'owner';
@@ -63,6 +63,23 @@ export interface TaskAttachment {
     mimeType: string;
 }
 
+export interface TaskSubmission {
+    comment: string;
+    attachments: TaskAttachment[];
+    submittedAt?: string;
+}
+
+export interface TaskVerification {
+    status: 'pending' | 'approved' | 'rejected';
+    verifiedBy?: string;
+    verifiedAt?: string;
+}
+
+export interface TaskRejection {
+    reason?: string;
+    rejectedAt?: string;
+}
+
 export interface Task {
     _id: string;
     title: string;
@@ -76,6 +93,9 @@ export interface Task {
     credits: number;
     dueDate?: string;
     attachments: TaskAttachment[];
+    submission?: TaskSubmission;
+    verification?: TaskVerification;
+    rejection?: TaskRejection;
     createdAt: string;
     updatedAt: string;
 }
@@ -93,6 +113,7 @@ export interface ProjectMember {
 export interface KanbanData {
     todo: Task[];
     in_progress: Task[];
+    submitted: Task[];
     done: Task[];
 }
 

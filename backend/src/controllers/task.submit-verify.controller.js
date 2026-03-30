@@ -28,7 +28,7 @@ export const submitTask = asyncHandler(async (req, res) => {
       400,
       `Task must be in_progress to submit (current: ${task.status})`,
     );
-    
+
   // Build submission attachments from uploaded files (multer-cloudinary)
   const attachments = (req.files || []).map((f) => ({
     url: f.path,
@@ -65,15 +65,12 @@ export const verifyTask = asyncHandler(async (req, res) => {
   if (!["approve", "reject"].includes(action))
     throw new ApiError(400, 'action must be "approve" or "reject"');
 
-  if (task.assignedTo.toString() === verifierId.toString()) {
-    throw new ApiError(403, "You cannot verify your own task");
-  }
-  // Permission check via ProjectMember (not User.role)
-  await requireManagementRole(projectId, verifierId);
-
   const task = await Task.findById(taskId);
   if (!task || String(task.project) !== projectId)
     throw new ApiError(404, "Task not found in this project");
+
+  // Permission check via ProjectMember (not User.role)
+  await requireManagementRole(projectId, verifierId);
 
   if (task.status !== "submitted")
     throw new ApiError(
@@ -81,10 +78,10 @@ export const verifyTask = asyncHandler(async (req, res) => {
       `Task must be in submitted state (current: ${task.status})`,
     );
 
-  if (task.verification.status !== "pending")
+  if (task.verification?.status !== "pending")
     throw new ApiError(
       400,
-      `Task must be in pending state (current: ${task.verification.status})`,
+      `Task must be in pending state (current: ${task.verification?.status ?? "unknown"})`,
     );
 
   if (action === "approve") {

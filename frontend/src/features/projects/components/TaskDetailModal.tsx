@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,32 +26,15 @@ import { useAuthStore } from '@/stores/auth.store';
 import { EditableText } from '@/components/ui/editable-text';
 import EditableSelect from '@/components/ui/editable-select';
 import { useUpdateTaskMutation } from '@/features/projects/api';
+import TaskStatusDropdown from '@/features/tasks/components/TaskStatusDropdown';
+import SubmitTaskModal from '@/features/tasks/components/SubmitTaskModal';
 // ─── Visual config maps ────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   todo:        { label: 'To Do',       className: 'bg-slate-100 text-slate-700'  },
   in_progress: { label: 'In Progress', className: 'bg-blue-100 text-blue-700'    },
+  submitted:   { label: 'Submitted',   className: 'bg-amber-100 text-amber-800'  },
   done:        { label: 'Done',        className: 'bg-green-100 text-green-700'  },
 };
-
-const PRIORITY_CONFIG = {
-  low:      { label: 'Low',      className: 'bg-gray-100 text-gray-600'    },
-  medium:   { label: 'Medium',   className: 'bg-yellow-100 text-yellow-700' },
-  high:     { label: 'High',     className: 'bg-orange-100 text-orange-700' },
-  critical: { label: 'Critical', className: 'bg-red-100 text-red-700'      },
-};
-
-const DIFFICULTY_CONFIG = {
-  easy:   { label: 'Easy',   className: 'bg-emerald-100 text-emerald-700' },
-  medium: { label: 'Medium', className: 'bg-yellow-100 text-yellow-700'   },
-  hard:   { label: 'Hard',   className: 'bg-orange-100 text-orange-700'   },
-  expert: { label: 'Expert', className: 'bg-red-100 text-red-700'         },
-};
-// OPTIONS CONFIG :──────────────────────────────────────────────────────────────
-const STATUS_OPTIONS = [
-  { value: 'todo',        label: 'To Do',       className: 'bg-slate-100 text-slate-700'   },
-  { value: 'in_progress', label: 'In Progress',  className: 'bg-blue-100 text-blue-700'    },
-  { value: 'done',        label: 'Done',         className: 'bg-green-100 text-green-700'  },
-];
 
 const PRIORITY_OPTIONS = [
   { value: 'low',      label: 'Low',      className: 'bg-gray-100 text-gray-600'    },
@@ -77,6 +61,7 @@ export default function TaskDetailModal({
   projectId,
   onClose,
 }: TaskDetailModalProps) {
+  const [submitModalOpen, setSubmitModalOpen] = useState(false);
 
   const updateTask             = useUpdateTaskMutation(projectId);
   const currentUser            = useAuthStore((s) => s.user);
@@ -88,6 +73,7 @@ export default function TaskDetailModal({
   const canManage     = ['owner', 'project_admin'].includes(
     currentMember?.role ?? ''
   );
+  const isAssignee = currentTask?.assignedTo?._id === currentUser?._id;
 
   if (!currentTask) return null;
 
@@ -109,11 +95,6 @@ export default function TaskDetailModal({
     currentTask.dueDate &&
     currentTask.status !== 'done' &&
     new Date(currentTask.dueDate) < new Date();
-
-  const status     = STATUS_CONFIG[currentTask.status];
-  const priority   = PRIORITY_CONFIG[currentTask.priority];
-  const difficulty = DIFFICULTY_CONFIG[currentTask.difficulty];
-
 
   return (
     <Dialog open={!!task} onOpenChange={onClose}>
@@ -143,11 +124,12 @@ export default function TaskDetailModal({
 
           {/* Status + Priority + Difficulty badges row */}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <EditableSelect
-              value={currentTask.status}
-              options={STATUS_OPTIONS}
-              onSave={(val) => handleFieldUpdate('status', val)}
-              disabled={!canManage}
+            <TaskStatusDropdown
+              task={currentTask}
+              projectId={projectId}
+              role={currentMember?.role}
+              isAssignee={!!isAssignee}
+              onRequestSubmit={() => setSubmitModalOpen(true)}
             />
             <Flag className="h-3 w-3 inline mr-1" />
             <EditableSelect
@@ -192,6 +174,43 @@ export default function TaskDetailModal({
             </div>
 
             <Separator />
+
+            {/* Submission and verification details */}
+            {(currentTask.submission?.comment || currentTask.submission?.submittedAt || currentTask.rejection?.reason) && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  Review Status
+                </h3>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {currentTask.status === 'submitted' && (
+                    <Badge className={STATUS_CONFIG.submitted.className}>Waiting for Review</Badge>
+                  )}
+                  {currentTask.status === 'done' && (
+                    <Badge className={STATUS_CONFIG.done.className}>Approved</Badge>
+                  )}
+                  {currentTask.verification?.status === 'rejected' && (
+                    <Badge className="bg-red-100 text-red-700">Changes Requested</Badge>
+                  )}
+                </div>
+
+                {currentTask.submission?.comment && (
+                  <p className="text-sm text-muted-foreground">{currentTask.submission.comment}</p>
+                )}
+
+                {currentTask.submission?.submittedAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Submitted on {formatDate(currentTask.submission.submittedAt)}
+                  </p>
+                )}
+
+                {currentTask.rejection?.reason && (
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Rejection reason: {currentTask.rejection.reason}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Attachments placeholder — Block 5 will fill this */}
             <div className="space-y-2">
@@ -323,6 +342,16 @@ export default function TaskDetailModal({
           </div>
         </div>
       </DialogContent>
+
+      {currentTask && (
+        <SubmitTaskModal
+          open={submitModalOpen}
+          onOpenChange={setSubmitModalOpen}
+          projectId={projectId}
+          taskId={currentTask._id}
+          taskTitle={currentTask.title}
+        />
+      )}
     </Dialog>
   );
 }

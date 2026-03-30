@@ -12,12 +12,26 @@ export interface Task {
     _id: string;
     title: string;
     description: string;
-    status: string;
+    status: TaskStatus;
     priority: string;
     difficulty: string;
     credits: number;
     dueDate?: string;
     attachments: TaskAttachment[];
+    submission?: {
+        comment: string;
+        attachments: TaskAttachment[];
+        submittedAt?: string;
+    };
+    verification?: {
+        status: 'pending' | 'approved' | 'rejected';
+        verifiedBy?: string;
+        verifiedAt?: string;
+    };
+    rejection?: {
+        reason?: string;
+        rejectedAt?: string;
+    };
     createdBy: any;
     assignedTo: any;
     createdAt: string;
@@ -35,7 +49,7 @@ export interface TasksResponse {
         hasPrevPage: boolean;
     };
 }
-export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskStatus = 'todo' | 'in_progress' | 'submitted' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TaskDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
@@ -46,6 +60,6 @@ export interface CreateTaskPayload {
     status?: TaskStatus;
     priority?: TaskPriority;
     difficulty?: TaskDifficulty;
-    credits?: number;          
-    dueDate?: string;          
+    credits?: number;
+    dueDate?: string;
 }

@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Task, TaskStatus } from '../types';
+import type { ProjectRole, Task, TaskStatus } from '../types';
 import TaskCard from './TaskCard';
 import { useDroppable } from '@dnd-kit/core';
 import {
@@ -17,15 +17,19 @@ import { cn } from '@/lib/utils';
 // Dark mode: darker, muted backgrounds
 const COLUMN_STYLES: Record<TaskStatus, { light: string; dark: string }> = {
   todo: {
-    light: 'bg-slate-50 dark:bg-slate-900/50',
+    light: 'bg-muted/40',
     dark: 'bg-slate-200 dark:peer-checked:bg-slate-800',
   },
   in_progress: {
-    light: 'bg-blue-50/70 dark:bg-blue-950/40',
+    light: 'bg-blue-50/50 dark:bg-blue-950/20',
+    dark: '',
+  },
+  submitted: {
+    light: 'bg-amber-50/60 dark:bg-amber-950/20',
     dark: '',
   },
   done: {
-    light: 'bg-green-50/70 dark:bg-green-950/40',
+    light: 'bg-emerald-50/60 dark:bg-emerald-950/20',
     dark: '',
   },
 };
@@ -39,26 +43,34 @@ interface KanbanColumnProps {
   onAddTask: () => void;
   onTaskClick: (task: Task) => void;
   isOver: boolean;
+  currentRole?: ProjectRole;
+  currentUserId?: string;
 }
 
 export default function KanbanColumn({
   columnId, label, tasks,
   isLoading, projectId, onAddTask, onTaskClick,
   isOver,
+  currentRole,
+  currentUserId,
 }: KanbanColumnProps) {
   const taskIds = tasks.map((t) => t._id);
   const columnStyle = COLUMN_STYLES[columnId];
+  const { setNodeRef } = useDroppable({
+    id: columnId,
+    data: { type: 'column', columnId },
+  });
 
   return (
     <div
+      ref={setNodeRef}
       className={cn(
-        'rounded-xl p-4 space-y-3 min-h-[400px]',
+        'rounded-xl border border-border p-3 min-h-[420px]',
         'transition-all duration-200',
-        'border border-transparent',
         // Theme-aware background
         columnStyle.light,
         // Hover/over states
-        isOver ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-950 brightness-95' : ''
+        isOver ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-background' : ''
       )}
     >
       {/* Column header */}
@@ -93,7 +105,7 @@ export default function KanbanColumn({
 
       {/* Tasks */}
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2 min-h-[80px]">
+        <div className="mt-2 flex min-h-[80px] flex-col gap-2">
           {!isLoading && tasks.map((task) => (
             <TaskCard
               key={task._id}
@@ -101,6 +113,8 @@ export default function KanbanColumn({
               projectId={projectId}
               onTaskClick={onTaskClick}
               columnId={columnId}
+              currentRole={currentRole}
+              currentUserId={currentUserId}
             />
           ))}
 
