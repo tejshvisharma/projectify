@@ -2,7 +2,7 @@ import express from "express";
 import errorHandler from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import  devLogger from "./middlewares/devLogger.middleware.js";
+import devLogger from "./middlewares/devLogger.middleware.js";
 
 const app = express();
 // all middlewares :
@@ -13,7 +13,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(devLogger);
-
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
@@ -47,12 +46,14 @@ import authRouter from "./routes/auth.routes.js";
 import projectRouter from "./routes/project.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import SubTaskRouter from "./routes/subTask.routes.js";
+import leaderboardRouter from "./routes/leaderboard.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/subtasks", SubTaskRouter);
+app.use("/api/v1/leaderboard", leaderboardRouter);
 
 app.use(errorHandler);
 

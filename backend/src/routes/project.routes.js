@@ -36,6 +36,7 @@ import {
   updateTask,
   deleteTask,
 } from "../controllers/task.controllers.js";
+import { getProjectLeaderboard } from "../controllers/leaderboard.controller.js";
 import {
   createTaskValidator,
   updateTaskValidator,
@@ -57,7 +58,10 @@ import {
 } from "../validators/notesValidators.js";
 
 import { uploadTaskAttachments } from "../middlewares/upload.middleware.js";
-import { submitTask, verifyTask } from "../controllers/task.submit-verify.controller.js";
+import {
+  submitTask,
+  verifyTask,
+} from "../controllers/task.submit-verify.controller.js";
 
 const router = Router();
 
@@ -142,33 +146,35 @@ router
     deleteTask,
   );
 
-router
-  .route("/:projectId/tasks/:taskId/submit")
-  .patch(
+router.route("/:projectId/tasks/:taskId/submit").patch(
   isLoggedIn,
   validateProjectPermission(PROJECT_ROLES.EDITORS), // ensures user is a member at all
   uploadTaskAttachments.array("attachments", 5),
   submitTask,
-  );
+);
 
 router
   .route("/:projectId/tasks/:taskId/verify")
   .patch(
-  isLoggedIn,
-  validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-  verifyTaskValidator(),
-  verifyTask, 
- );
-
-  // for notes routing:
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    verifyTaskValidator(),
+    verifyTask,
+  );
 
 router
-  .route("/:projectId/notes")
+  .route("/:projectId/leaderboard")
   .get(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.VIEWERS),
-    getNotes,
-  )
+    getProjectLeaderboard,
+  );
+
+// for notes routing:
+
+router
+  .route("/:projectId/notes")
+  .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getNotes)
   .post(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
