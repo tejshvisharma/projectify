@@ -13,6 +13,7 @@ Production: [Your production URL]/api/v1
 - [Projects](#projects)
 - [Project Members](#project-members)
 - [Tasks](#tasks)
+- [Leaderboard](#leaderboard)
 - [Comments](#comments)
 - [SubTasks](#subtasks)
 - [Notes](#notes)
@@ -259,10 +260,12 @@ Content-Type: application/json
   "data": null
 }
 ```
+
 ### Update Profile
+
 ```http
 PATCH /auth/update-profile
-Authorization: Bearer 
+Authorization: Bearer
 Content-Type: application/json
 
 {
@@ -272,6 +275,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "statuscode": 200,
@@ -292,15 +296,17 @@ Content-Type: application/json
 ```
 
 ### Update Avatar
+
 ```http
 PATCH /auth/update-avatar
-Authorization: Bearer 
+Authorization: Bearer
 Content-Type: multipart/form-data
 
 avatar=
 ```
 
 **Response (200):**
+
 ```json
 {
   "statuscode": 200,
@@ -608,6 +614,23 @@ Authorization: Bearer <accessToken>
 
 ## Tasks
 
+### Task Status Lifecycle (Updated)
+
+Current task flow is now:
+
+```text
+todo -> in_progress -> submitted -> done (approved)
+                           \-> in_progress (rejected)
+```
+
+Important behavior:
+
+- `done` cannot be set directly from regular task update endpoint.
+- `submitted` cannot be set from regular task update endpoint.
+- Assignee submits work via submit endpoint.
+- Management (`owner`, `project_admin`) verifies submission via verify endpoint.
+- Rejected verification sends task back to `in_progress`.
+
 ### Get Project Tasks (Paginated)
 
 ```http
@@ -746,6 +769,12 @@ attachments=<new_file>
 - All fields from create task (optional)
 - `removeFiles` (optional): Array of `public_id` strings to delete from attachments
 
+**Status Transition Note:**
+
+- Use this endpoint for normal edits and for transitions like `todo -> in_progress`.
+- This endpoint rejects direct updates to `submitted` and `done`.
+- Use submit/verify endpoints below for review flow.
+
 **Response (200):**
 
 ```json
@@ -781,6 +810,334 @@ Authorization: Bearer <accessToken>
 ```
 
 **Note:** Cascades deletion to all comments and subtasks.
+
+### Submit Task For Review
+
+```http
+PATCH /projects/:projectId/tasks/:taskId/submit
+Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data
+
+comment=Completed implementation, please review
+attachments=<file>
+attachments=<file>
+```
+
+**Required Role:** `member`, `project_admin`, or `owner`
+
+**Additional Restrictions:**
+
+- Only the assigned user can submit.
+- Task must currently be in `in_progress`.
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Task submitted for review",
+  "data": {
+    "_id": "676a...",
+    "status": "submitted",
+    "submission": {
+      "comment": "Completed implementation, please review",
+      "attachments": [
+        {
+          "url": "https://...",
+          "public_id": "abc123",
+          "resource_type": "image",
+          "bytes": 12345,
+          "format": "png",
+          "original_filename": "screenshot.png",
+          "mimeType": "image/png"
+        }
+      ],
+      "submittedAt": "2024-12-24T..."
+    },
+    "verification": {
+      "status": "pending"
+    }
+  }
+}
+```
+
+### Verify Submitted Task (Approve / Reject)
+
+```http
+PATCH /projects/:projectId/tasks/:taskId/verify
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+
+{
+  "action": "approve"
+}
+```
+
+Or reject:
+
+```http
+PATCH /projects/:projectId/tasks/:taskId/verify
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+
+{
+  "action": "reject",
+  "reason": "Please attach test evidence"
+}
+```
+
+**Required Role:** `project_admin` or `owner`
+
+**Additional Restrictions:**
+
+- Task must currently be in `submitted`.
+- Verification state must be `pending`.
+- Rejection requires non-empty `reason`.
+
+**Approve Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Task approved and contribution recorded",
+  "data": {
+    "taskId": "676a...",
+    "action": "approved"
+  }
+}
+```
+
+**Reject Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Task rejected, sent back to assignee",
+  "data": {
+    "taskId": "676a...",
+    "action": "rejected"
+  }
+}
+```
+
+---
+
+## Leaderboard
+
+### Get Project Leaderboard (Paginated)
+
+```http
+GET /projects/:projectId/leaderboard?page=1&limit=10
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Any project member (viewer and above)
+
+**Sort Order:**
+
+- `stats.totalCredits` descending
+- `stats.tasksCompleted` descending
+- `stats.onTimeTasks` descending
+- `updatedAt` ascending
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Leaderboard fetched successfully",
+  "data": {
+    "leaders": [
+      {
+        "_id": "676a...",
+        "user": {
+          "_id": "676a...",
+          "username": "johndoe",
+          "avatar": {
+            "url": "https://...",
+            "localPath": ""
+          }
+        },
+        "role": "member",
+        "stats": {
+          "totalCredits": 120,
+          "tasksCompleted": 15,
+          "onTimeTasks": 11
+        },
+        "updatedAt": "2024-12-24T..."
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 22
+    },
+    "currentUser": {
+      "rank": 3,
+      "totalCredits": 95
+    }
+  }
+}
+```
+
+### Get Global Leaderboard (Paginated)
+
+```http
+GET /leaderboard/global?page=1&limit=10
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Authenticated user
+
+**Sort Order:**
+
+- `stats.totalCredits` descending
+- `stats.totalTasksCompleted` descending
+- `stats.onTimeTasks` descending
+- `updatedAt` ascending
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Leaderboard fetched successfully",
+  "data": {
+    "leaders": [
+      {
+        "_id": "676a...",
+        "username": "johndoe",
+        "avatar": {
+          "url": "https://...",
+          "localPath": ""
+        },
+        "stats": {
+          "totalCredits": 320,
+          "totalTasksCompleted": 44,
+          "onTimeTasks": 36
+        },
+        "updatedAt": "2024-12-24T..."
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 150
+    },
+    "currentUser": {
+      "rank": 12,
+      "totalCredits": 110
+    }
+  }
+}
+```
+
+**Frontend Notes:**
+
+- `currentUser.rank` can be `null` when rank is unavailable.
+- Missing stats are normalized to `0` in backend response.
+- Use `leaders` + `pagination` + `currentUser` from `data` directly.
+
+### TypeScript Interfaces (Frontend Ready)
+
+```ts
+type Avatar = {
+  url?: string;
+  public_id?: string;
+  localPath?: string;
+};
+
+type LeaderboardPagination = {
+  page: number;
+  limit: number;
+  total: number;
+};
+
+type LeaderboardCurrentUser = {
+  rank: number | null;
+  totalCredits: number;
+};
+
+type ProjectLeaderboardStats = {
+  totalCredits: number;
+  tasksCompleted: number;
+  onTimeTasks: number;
+};
+
+type ProjectLeaderboardLeader = {
+  _id: string;
+  user: {
+    _id: string;
+    username: string;
+    avatar: Avatar;
+  };
+  role: "owner" | "project_admin" | "member" | "viewer";
+  stats: ProjectLeaderboardStats;
+  updatedAt: string;
+};
+
+type GlobalLeaderboardStats = {
+  totalCredits: number;
+  totalTasksCompleted: number;
+  onTimeTasks: number;
+};
+
+type GlobalLeaderboardLeader = {
+  _id: string;
+  username: string;
+  avatar: Avatar;
+  stats: GlobalLeaderboardStats;
+  updatedAt: string;
+};
+
+type ProjectLeaderboardData = {
+  leaders: ProjectLeaderboardLeader[];
+  pagination: LeaderboardPagination;
+  currentUser: LeaderboardCurrentUser;
+};
+
+type GlobalLeaderboardData = {
+  leaders: GlobalLeaderboardLeader[];
+  pagination: LeaderboardPagination;
+  currentUser: LeaderboardCurrentUser;
+};
+
+type ApiResponse<T> = {
+  statuscode: number;
+  success: boolean;
+  message: string;
+  data: T;
+};
+```
+
+### TypeScript API Helpers (Axios)
+
+```ts
+import axios from "axios";
+
+export const getProjectLeaderboard = (
+  projectId: string,
+  page = 1,
+  limit = 10,
+) =>
+  axios
+    .get<
+      ApiResponse<ProjectLeaderboardData>
+    >(`/projects/${projectId}/leaderboard?page=${page}&limit=${limit}`)
+    .then((res) => res.data.data);
+
+export const getGlobalLeaderboard = (page = 1, limit = 10) =>
+  axios
+    .get<
+      ApiResponse<GlobalLeaderboardData>
+    >(`/leaderboard/global?page=${page}&limit=${limit}`)
+    .then((res) => res.data.data);
+```
 
 ---
 
@@ -1302,6 +1659,24 @@ PROJECT_ROLES.EDITORS = ["owner", "project_admin", "member"];
 PROJECT_ROLES.VIEWERS = ["owner", "project_admin", "member", "viewer"];
 ```
 
+### Task Status States
+
+```javascript
+taskStatusEnums = {
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  SUBMITTED: "submitted",
+  DONE: "done",
+};
+```
+
+Practical workflow:
+
+- Assignee starts task: `todo -> in_progress`
+- Assignee submits: `in_progress -> submitted`
+- Manager approves: `submitted -> done`
+- Manager rejects: `submitted -> in_progress`
+
 ### Error Response Format
 
 ```json
@@ -1461,6 +1836,18 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 3. **Pagination Added:**
    - `GET /projects` now returns `{ projects, meta }` instead of flat array
    - `GET /projects/:projectId/tasks` now returns `{ tasks, meta }` instead of flat array
+
+4. **Task Review Flow Added:**
+
+- New endpoint: `PATCH /projects/:projectId/tasks/:taskId/submit`
+- New endpoint: `PATCH /projects/:projectId/tasks/:taskId/verify`
+- Task lifecycle changed from `todo -> in_progress -> done`
+- New lifecycle: `todo -> in_progress -> submitted -> done` (approve) or `in_progress` (reject)
+
+5. **Leaderboard Endpoints Added:**
+
+- New endpoint: `GET /projects/:projectId/leaderboard`
+- New endpoint: `GET /leaderboard/global`
 
 ### Frontend Implementation Tips
 
