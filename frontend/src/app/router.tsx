@@ -11,6 +11,7 @@ import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 // Project Pages
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
+import GlobalLeaderboardPage from '@/features/projects/pages/GlobalLeaderboardPage';
 import ProfilePage from '@/features/auth/pages/ProfilePage';
 import LandingPage from '@/pages/LandingPage';
 import { PublicRoute } from '@/components/layout/PublicRoute';
@@ -64,6 +65,10 @@ export const router = createBrowserRouter([
           {
             path: '/projects/:projectId',
             element: <ProjectDetailsPage />,
+          },
+          {
+            path: '/leaderboard',
+            element: <GlobalLeaderboardPage />,
           },
           {
             path: '/profile',

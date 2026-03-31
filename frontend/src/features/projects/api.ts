@@ -12,6 +12,8 @@ import type {
     SubTask,
     CreateSubTaskPayload,
     CreateProjectPayload,
+    ProjectLeaderboardResponse,
+    GlobalLeaderboardResponse,
 } from './types';
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -24,6 +26,10 @@ export const projectKeys = {
     detail: (id: string) => [...projectKeys.details(), id] as const,
     members: (id: string) => [...projectKeys.detail(id), 'members'] as const,
     tasks: (id: string) => [...projectKeys.detail(id), 'tasks'] as const,
+    leaderboard: (id: string, page: number, limit: number) =>
+        [...projectKeys.detail(id), 'leaderboard', { page, limit }] as const,
+    globalLeaderboard: (page: number, limit: number) =>
+        [...projectKeys.all, 'global-leaderboard', { page, limit }] as const,
     subtasks: (projectId: string, taskId: string) =>
         [...projectKeys.detail(projectId), 'tasks', taskId, 'subtasks'] as const,
 };
@@ -148,6 +154,35 @@ export function useGetProjectTasksQuery(projectId: string) {
             return response.data.data.tasks;
         },
         enabled: !!projectId,
+    });
+}
+
+export function useGetProjectLeaderboardQuery(
+    projectId: string,
+    page: number,
+    limit: number,
+) {
+    return useQuery({
+        queryKey: projectKeys.leaderboard(projectId, page, limit),
+        queryFn: async () => {
+            const response = await apiClient.get<ApiResponse<ProjectLeaderboardResponse>>(
+                `/projects/${projectId}/leaderboard?page=${page}&limit=${limit}`
+            );
+            return response.data.data;
+        },
+        enabled: !!projectId,
+    });
+}
+
+export function useGetGlobalLeaderboardQuery(page: number, limit: number) {
+    return useQuery({
+        queryKey: projectKeys.globalLeaderboard(page, limit),
+        queryFn: async () => {
+            const response = await apiClient.get<ApiResponse<GlobalLeaderboardResponse>>(
+                `/leaderboard/global?page=${page}&limit=${limit}`
+            );
+            return response.data.data;
+        },
     });
 }
 

@@ -10,6 +10,7 @@ import ProjectHeader from '../components/ProjectHeader';
 import KanbanBoard from '../components/KanbanBoard';
 import ProjectSettingsTab from '../components/ProjectSettingsTab';
 import NotesPanel from '@/features/notes/components/NotesPanel';
+import ProjectLeaderboardTab from '../components/ProjectLeaderboardTab';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -76,11 +77,12 @@ export default function ProjectDetailsPage() {
 
       {/* Tabs: Board / Tasks / Notes / Settings */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-4">
+        <TabsList className="grid w-full max-w-md grid-cols-5">
           <TabsTrigger value="board">Board</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="Leaderboard">Leaderboard</TabsTrigger> 
           <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger> 
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         {/* Kanban Board Tab */}
@@ -96,6 +98,10 @@ export default function ProjectDetailsPage() {
           <p className="text-muted-foreground">Task list view — coming soon</p>
         </TabsContent>
 
+        {/* Leaderboard Tab — coming in next step */}
+        <TabsContent value="Leaderboard" className="mt-6">
+          <ProjectLeaderboardTab/>
+        </TabsContent>
         {/* Notes Tab — coming in next step */}
         <TabsContent value="notes" className="mt-6">
           <NotesPanel projectId={projectId} />

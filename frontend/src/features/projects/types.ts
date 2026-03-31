@@ -147,3 +147,54 @@ export interface CreateSubTaskPayload {
     title: string;
     isCompleted?: boolean;
 }
+
+export interface LeaderboardStats {
+    totalCredits: number;
+    tasksCompleted: number;
+    onTimeTasks: number;
+}
+
+export interface LeaderboardMember {
+    _id: string;
+    user: UserSummary;
+    role: ProjectRole;
+    stats: LeaderboardStats;
+    updatedAt: string;
+}
+
+export interface LeaderboardPagination {
+    page: number;
+    limit: number;
+    total: number;
+}
+
+export interface LeaderboardCurrentUser {
+    rank: number | null;
+    totalCredits: number;
+}
+
+export interface ProjectLeaderboardResponse {
+    leaders: LeaderboardMember[];
+    pagination: LeaderboardPagination;
+    currentUser: LeaderboardCurrentUser;
+}
+
+export interface GlobalLeaderboardStats {
+    totalCredits: number;
+    totalTasksCompleted: number;
+    onTimeTasks: number;
+}
+
+export interface GlobalLeaderboardUser {
+    _id: string;
+    username: string;
+    avatar: UserSummary['avatar'];
+    stats: GlobalLeaderboardStats;
+    updatedAt: string;
+}
+
+export interface GlobalLeaderboardResponse {
+    leaders: GlobalLeaderboardUser[];
+    pagination: LeaderboardPagination;
+    currentUser: LeaderboardCurrentUser;
+}

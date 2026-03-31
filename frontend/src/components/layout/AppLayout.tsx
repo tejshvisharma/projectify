@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FolderKanban,
-  Menu, Sun, Moon, User, LogOut,
+  Menu, Sun, Moon, User, LogOut, Trophy,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLogoutMutation } from '@/features/auth/api';
@@ -37,6 +37,12 @@ const NAV_LINKS = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     enabled: false, // disabled until built
+  },
+  {
+    to: '/leaderboard',
+    label: 'Leaderboard',
+    icon: Trophy,
+    enabled: true,
   },
 ];
 
