@@ -1,6 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-gradient-drift {
+  0% {
+    transform: translate3d(0, var(--hero-parallax), 0) scale(var(--hero-drift-scale-start));
+    filter: hue-rotate(0deg) saturate(var(--hero-sat-low));
+  }
+
+  50% {
+    transform: translate3d(0, calc(var(--hero-parallax) - var(--hero-drift-offset)), 0) scale(var(--hero-drift-scale-mid));
+    filter: hue-rotate(var(--hero-hue-mid)) saturate(var(--hero-sat-high));
+  }
+
+  100% {
+    transform: translate3d(0, calc(var(--hero-parallax) + (var(--hero-drift-offset) * 0.75)), 0) scale(var(--hero-drift-scale-end));
+    filter: hue-rotate(var(--hero-hue-end)) saturate(var(--hero-sat-end));
+  }
+}
+
+@keyframes hero-gradient-fade {
+  0%,
+  100% {
+    opacity: calc(var(--hero-fade-min) + (var(--hero-progress) * 0.16));
+  }
+
+  50% {
+    opacity: calc(var(--hero-fade-max) + (var(--hero-progress) * 0.2));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-fade-up,
+  .landing-delay-1,
+  .landing-delay-2,
+  .landing-delay-3,
+  .landing-delay-4,
+  .landing-delay-5 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 
 @layer base {
   :root {
@@ -115,6 +170,220 @@
 }
 
 @layer utilities {
+  .hero-transition-root {
+    --hero-progress: 0;
+    --hero-parallax: 0px;
+    --hero-shift-opacity: 0.52;
+    --hero-fade-min: 0.2;
+    --hero-fade-max: 0.3;
+    --hero-drift-offset: 8px;
+    --hero-drift-scale-start: 1.02;
+    --hero-drift-scale-mid: 1.06;
+    --hero-drift-scale-end: 1.03;
+    --hero-hue-mid: 7deg;
+    --hero-hue-end: -6deg;
+    --hero-sat-low: 105%;
+    --hero-sat-high: 113%;
+    --hero-sat-end: 108%;
+    --hero-readability-top: 0.28;
+    --hero-readability-mid: 0.58;
+    --hero-readability-bottom: 0.74;
+    isolation: isolate;
+  }
+
+  .hero-transition-subtle {
+    --hero-shift-opacity: 0.42;
+    --hero-fade-min: 0.16;
+    --hero-fade-max: 0.24;
+    --hero-drift-offset: 5px;
+    --hero-drift-scale-start: 1.01;
+    --hero-drift-scale-mid: 1.035;
+    --hero-drift-scale-end: 1.02;
+    --hero-hue-mid: 4deg;
+    --hero-hue-end: -3deg;
+    --hero-sat-low: 102%;
+    --hero-sat-high: 108%;
+    --hero-sat-end: 104%;
+    --hero-readability-top: 0.34;
+    --hero-readability-mid: 0.63;
+    --hero-readability-bottom: 0.8;
+  }
+
+  .hero-transition-expressive {
+    --hero-shift-opacity: 0.58;
+    --hero-fade-min: 0.22;
+    --hero-fade-max: 0.34;
+    --hero-drift-offset: 10px;
+    --hero-drift-scale-start: 1.03;
+    --hero-drift-scale-mid: 1.075;
+    --hero-drift-scale-end: 1.045;
+    --hero-hue-mid: 9deg;
+    --hero-hue-end: -8deg;
+    --hero-sat-low: 107%;
+    --hero-sat-high: 118%;
+    --hero-sat-end: 111%;
+    --hero-readability-top: 0.26;
+    --hero-readability-mid: 0.55;
+    --hero-readability-bottom: 0.71;
+  }
+
+  .hero-gradient-shift {
+    @apply pointer-events-none absolute inset-[-28%];
+    background:
+      radial-gradient(circle at 12% 16%, hsl(var(--primary) / 0.24), transparent 34%),
+      radial-gradient(circle at 88% 14%, hsl(var(--accent) / 0.22), transparent 36%),
+      radial-gradient(circle at 56% 80%, hsl(var(--primary) / 0.16), transparent 36%);
+    opacity: var(--hero-shift-opacity);
+    filter: blur(26px) saturate(108%);
+    animation: hero-gradient-drift 20s ease-in-out infinite alternate;
+    will-change: transform, filter;
+  }
+
+  .hero-gradient-fade {
+    @apply pointer-events-none absolute inset-[-30%];
+    background:
+      radial-gradient(circle at 28% 34%, hsl(var(--primary) / 0.18), transparent 28%),
+      radial-gradient(circle at 74% 42%, hsl(var(--accent) / 0.16), transparent 30%),
+      linear-gradient(160deg, hsl(var(--primary) / 0.08), transparent 45%, hsl(var(--accent) / 0.07));
+    mix-blend-mode: soft-light;
+    animation: hero-gradient-fade 13s ease-in-out infinite;
+    will-change: opacity;
+  }
+
+  .hero-bg-readability {
+    @apply pointer-events-none absolute inset-0;
+    background:
+      linear-gradient(
+        to bottom,
+        hsl(var(--background) / var(--hero-readability-top)),
+        hsl(var(--background) / var(--hero-readability-mid)) 62%,
+        hsl(var(--background) / var(--hero-readability-bottom))
+      );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-gradient-shift,
+    .hero-gradient-fade {
+      animation: none;
+      transform: none;
+      filter: none;
+    }
+
+    .hero-gradient-shift {
+      opacity: 0.34;
+    }
+
+    .hero-gradient-fade {
+      opacity: 0.2;
+    }
+  }
+
+  .landing-jelly-root {
+    --jelly-x: 50vw;
+    --jelly-y: 24vh;
+    --jelly-lag-x: 50vw;
+    --jelly-lag-y: 24vh;
+    --jelly-strength: 0;
+    isolation: isolate;
+  }
+
+  .landing-jelly-base {
+    @apply pointer-events-none absolute inset-[-12%];
+    opacity: 0.42;
+    background:
+      radial-gradient(circle at 18% 16%, hsl(var(--primary) / 0.2), transparent 30%),
+      radial-gradient(circle at 84% 12%, hsl(var(--accent) / 0.18), transparent 34%),
+      radial-gradient(circle at 52% 84%, hsl(var(--primary) / 0.13), transparent 34%);
+    filter: blur(18px);
+  }
+
+  .landing-jelly-orb {
+    @apply pointer-events-none absolute left-0 top-0 rounded-full;
+    will-change: transform;
+    mix-blend-mode: soft-light;
+    filter: blur(48px) saturate(126%);
+  }
+
+  .landing-jelly-orb-lead {
+    width: clamp(18rem, 30vw, 34rem);
+    height: clamp(18rem, 30vw, 34rem);
+    opacity: 0.34;
+    background:
+      radial-gradient(circle at 32% 34%, hsl(var(--primary) / 0.5), transparent 62%),
+      radial-gradient(circle at 62% 56%, hsl(var(--accent) / 0.38), transparent 70%);
+    transform:
+      translate3d(calc(var(--jelly-x) - 50%), calc(var(--jelly-y) - 50%), 0)
+      scale(calc(1 + (var(--jelly-strength) * 0.22)));
+  }
+
+  .landing-jelly-orb-lag {
+    width: clamp(16rem, 25vw, 28rem);
+    height: clamp(16rem, 25vw, 28rem);
+    opacity: 0.28;
+    background:
+      radial-gradient(circle at 40% 36%, hsl(var(--accent) / 0.44), transparent 64%),
+      radial-gradient(circle at 66% 62%, hsl(var(--primary) / 0.32), transparent 74%);
+    transform:
+      translate3d(calc(var(--jelly-lag-x) - 50%), calc(var(--jelly-lag-y) - 50%), 0)
+      scale(calc(1 + (var(--jelly-strength) * 0.3)));
+  }
+
+  .landing-jelly-wave {
+    @apply pointer-events-none absolute inset-[-20%];
+    will-change: transform, opacity;
+    opacity: calc(0.14 + (var(--jelly-strength) * 0.2));
+    background:
+      radial-gradient(circle at var(--jelly-x) var(--jelly-y), hsl(var(--primary) / 0.2), transparent 22%),
+      radial-gradient(circle at var(--jelly-lag-x) var(--jelly-lag-y), hsl(var(--accent) / 0.16), transparent 28%),
+      repeating-radial-gradient(circle at var(--jelly-x) var(--jelly-y), hsl(var(--primary) / 0.09) 0 2px, transparent 2px 20px);
+    transform: scale(calc(1 + (var(--jelly-strength) * 0.06)));
+    mix-blend-mode: soft-light;
+    filter: blur(0.35px);
+  }
+
+  @media (prefers-reduced-motion: reduce), (pointer: coarse) {
+    .landing-jelly-orb,
+    .landing-jelly-wave {
+      opacity: 0.1;
+      transform:
+        translate3d(calc(var(--jelly-x) - 50%), calc(var(--jelly-y) - 50%), 0)
+        scale(1);
+    }
+
+    .landing-jelly-wave {
+      opacity: 0.07;
+      background:
+        radial-gradient(circle at 50% 18%, hsl(var(--primary) / 0.14), transparent 26%),
+        radial-gradient(circle at 84% 12%, hsl(var(--accent) / 0.12), transparent 28%);
+    }
+  }
+
+  .landing-fade-up {
+    opacity: 0;
+    animation: landing-fade-up 650ms ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  .landing-delay-1 {
+    animation-delay: 80ms;
+  }
+
+  .landing-delay-2 {
+    animation-delay: 140ms;
+  }
+
+  .landing-delay-3 {
+    animation-delay: 200ms;
+  }
+
+  .landing-delay-4 {
+    animation-delay: 260ms;
+  }
+
+  .landing-delay-5 {
+    animation-delay: 320ms;
+  }
+
   .surface-card {
     @apply rounded-xl border border-border/70 bg-card/90 shadow-sm backdrop-blur-sm;
     box-shadow:

@@ -30,30 +30,33 @@ const TESTIMONIALS = [
 
 export default function TestimonialsSection() {
   return (
-    <section className="py-20 sm:py-32 border-t">
+    <section className="py-20 sm:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Section header */}
-        <div className="text-center space-y-4 mb-16">
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest">
+        <div className="landing-fade-up text-center space-y-4 mb-14">
+          <p className="text-sm font-semibold text-primary uppercase tracking-[0.14em]">
             Testimonials
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="font-['Sora',ui-sans-serif,system-ui] text-3xl sm:text-4xl font-semibold tracking-tight">
             Loved by teams worldwide
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            See what teams are saying about Projectify.
+            Trusted by engineering and product teams building quickly without losing visibility.
           </p>
         </div>
 
-        {/* Testimonials grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="landing-fade-up mb-10 grid grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 text-center text-xs text-muted-foreground sm:grid-cols-4 sm:text-sm">
+          <div className="rounded-xl bg-background/70 py-3">99.95% uptime</div>
+          <div className="rounded-xl bg-background/70 py-3">12k+ tasks/week</div>
+          <div className="rounded-xl bg-background/70 py-3">500+ active teams</div>
+          <div className="rounded-xl bg-background/70 py-3">4.9/5 avg rating</div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {TESTIMONIALS.map((t) => (
             <div
               key={t.name}
-              className="flex flex-col p-6 rounded-2xl border bg-card hover:shadow-lg transition-all duration-300"
+              className="landing-fade-up flex flex-col rounded-2xl border border-border/70 bg-card/90 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_14px_30px_hsl(var(--shadow-color)/0.14)]"
             >
-              {/* Stars */}
               <div className="flex gap-1 mb-4">
                 {Array.from({ length: t.rating }).map((_, i) => (
                   <Star
@@ -63,12 +66,10 @@ export default function TestimonialsSection() {
                 ))}
               </div>
 
-              {/* Quote */}
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-6">
+              <p className="mb-6 flex-1 text-sm text-muted-foreground leading-relaxed">
                 "{t.quote}"
               </p>
 
-              {/* Author */}
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
@@ -83,7 +84,6 @@ export default function TestimonialsSection() {
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

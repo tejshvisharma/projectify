@@ -16,15 +16,13 @@ const FEATURES = [
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="py-20 sm:py-32 bg-muted/30">
+    <section id="pricing" className="py-20 sm:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Section header */}
-        <div className="text-center space-y-4 mb-16">
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest">
+        <div className="landing-fade-up text-center space-y-4 mb-14">
+          <p className="text-sm font-semibold text-primary uppercase tracking-[0.14em]">
             Pricing
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="font-['Sora',ui-sans-serif,system-ui] text-3xl sm:text-4xl font-semibold tracking-tight">
             Simple, honest pricing
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -32,18 +30,16 @@ export default function PricingSection() {
           </p>
         </div>
 
-        {/* Single pricing card — centered */}
-        <div className="max-w-md mx-auto">
-          <div className="relative rounded-2xl border-2 border-primary bg-card p-8 shadow-xl">
+        <div className="mx-auto max-w-md">
+          <div className="landing-fade-up landing-delay-1 relative overflow-hidden rounded-3xl border-2 border-primary/70 bg-card/95 p-8 shadow-[0_18px_46px_hsl(var(--shadow-color)/0.16)]">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-primary/20 blur-2xl" />
 
-            {/* Popular badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <Badge className="px-4 py-1 text-xs font-semibold">
+              <Badge className="px-4 py-1 text-xs font-semibold tracking-wide">
                 ✨ Everything Included
               </Badge>
             </div>
 
-            {/* Plan name + price */}
             <div className="text-center mb-8">
               <h3 className="text-lg font-bold mb-2">Free Forever</h3>
               <div className="flex items-end justify-center gap-1">
@@ -55,7 +51,6 @@ export default function PricingSection() {
               </p>
             </div>
 
-            {/* Features list */}
             <ul className="space-y-3 mb-8">
               {FEATURES.map((feature) => (
                 <li key={feature} className="flex items-center gap-3 text-sm">
@@ -65,13 +60,11 @@ export default function PricingSection() {
               ))}
             </ul>
 
-            {/* CTA */}
-            <Button className="w-full" size="lg" asChild>
+            <Button className="w-full rounded-xl" size="lg" asChild>
               <Link to="/register">Get Started Free</Link>
             </Button>
           </div>
         </div>
-
       </div>
     </section>
   );
