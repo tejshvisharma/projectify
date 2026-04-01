@@ -1,7 +1,6 @@
 import { useState, type MouseEvent } from 'react';
 import { Calendar, User, GripVertical } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +96,7 @@ export default function TaskCard({
 
   const {
     attributes, listeners, setNodeRef,
-    transform, transition, isDragging: isSortableDragging,
+    isDragging: isSortableDragging,
   } = useSortable({
     id: task._id,
     data: {
@@ -105,12 +104,6 @@ export default function TaskCard({
       columnId,
     },
   });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isSortableDragging ? 0 : 1,
-  };
 
   const priority = PRIORITY_CONFIG[task.priority];
   const isManagement = !!currentRole && MANAGEMENT_ROLES.includes(currentRole);
@@ -204,13 +197,17 @@ export default function TaskCard({
 
   return (
     <>
-      <div ref={setNodeRef} style={style} {...attributes} className="w-full">
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        className={cn('w-full transition-opacity duration-150', isSortableDragging ? 'opacity-0' : 'opacity-100')}
+      >
         <Card
           className={cn(
             'w-full rounded-lg border border-border bg-card shadow-sm',
             'transition-all group',
             isDragging
-              ? 'shadow-2xl scale-105 rotate-2'
+              ? 'shadow-2xl ring-1 ring-primary/25'
               : 'hover:shadow-md'
           )}
           onClick={() => !isSortableDragging && onTaskClick(task)}
@@ -223,7 +220,7 @@ export default function TaskCard({
               <div
                 {...listeners}
                 className={cn(
-                  'mt-0.5 shrink-0 cursor-grab active:cursor-grabbing',
+                  'mt-0.5 shrink-0 cursor-grab active:cursor-grabbing touch-none',
                   'text-muted-foreground/50 hover:text-foreground/70',
                   'transition-colors'
                 )}

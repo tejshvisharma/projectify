@@ -55,12 +55,14 @@ export function AppLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="relative flex h-screen overflow-x-hidden bg-background">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-accent/10 blur-3xl" />
 
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
       <aside
         className={cn(
-          'fixed z-40 top-0 left-0 h-full flex flex-col border-r bg-card transition-all duration-300',
+          'fixed left-0 top-0 z-40 flex h-full flex-col border-r border-border/70 bg-card/90 backdrop-blur-md transition-all duration-300',
 
           // Desktop behavior
           'md:static md:translate-x-0',
@@ -72,9 +74,9 @@ export function AppLayout() {
         )}
       >
         {/* Sidebar Header */}
-        <div className="flex h-16 items-center justify-between border-b px-3">
+        <div className="flex h-16 items-center justify-between border-b border-border/70 px-3">
           {isSidebarOpen && (
-            <h1 className="text-xl font-bold text-primary ml-1">Projectify</h1>
+            <h1 className="ml-1 text-xl font-bold tracking-tight text-primary">Projectify</h1>
           )}
 
           <Button
@@ -82,7 +84,7 @@ export function AppLayout() {
           size="icon"
           onClick={() => setIsSidebarOpen((v) => !v)}
           className={cn(
-            'shrink-0 hidden md:flex',
+            'hidden shrink-0 md:flex',
             isSidebarOpen ? 'ml-auto' : 'mx-auto'
           )}
         >
@@ -101,9 +103,10 @@ export function AppLayout() {
                   key={to}
                   variant={isActive ? 'secondary' : 'ghost'}
                   className={cn(
-                    'w-full transition-all',
+                    'w-full rounded-lg transition-all duration-200',
                     isSidebarOpen ? 'justify-start px-3' : 'justify-center px-0',
-                    !enabled && 'opacity-50 cursor-not-allowed'
+                    isActive && 'border border-primary/25 bg-primary/10 text-primary shadow-sm',
+                    !enabled && 'cursor-not-allowed opacity-50'
                   )}
                   disabled={!enabled}
                   asChild={enabled}
@@ -147,16 +150,16 @@ export function AppLayout() {
       </aside>
       {isMobileSidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px] md:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
 
       {/* ── Main Content ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
 
         {/* Top Navbar */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 md:px-6">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/70 bg-card/80 px-4 backdrop-blur-md md:px-6">
 
           <div className="flex items-center gap-2">
 
@@ -175,7 +178,7 @@ export function AppLayout() {
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
 
             {/* Theme toggle */}
             <Button
@@ -183,7 +186,7 @@ export function AppLayout() {
               size="icon"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="h-9 w-9"
+              className="h-9 w-9 rounded-full"
             >
               {isDark
                 ? <Sun className="h-4 w-4" />
@@ -198,7 +201,7 @@ export function AppLayout() {
                   aria-label="Open user menu"
                   className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
+                  <Avatar className="h-9 w-9 cursor-pointer border border-border/70 transition-all hover:-translate-y-0.5 hover:ring-2 hover:ring-primary/50">
                     <AvatarImage src={user?.avatar?.url} />
                     <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
                       {user?.username?.slice(0, 2).toUpperCase()}
@@ -207,8 +210,8 @@ export function AppLayout() {
                 </button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="flex items-center gap-3 px-3 py-3 border-b">
+              <DropdownMenuContent align="end" className="w-56 border-border/70 bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-3 border-b border-border/70 px-3 py-3">
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarImage src={user?.avatar?.url} />
                     <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
@@ -245,7 +248,7 @@ export function AppLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2">
           <Outlet />
         </main>
 

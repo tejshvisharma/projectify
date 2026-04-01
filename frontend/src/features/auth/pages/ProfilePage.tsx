@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -159,7 +158,7 @@ export default function ProfilePage() {
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-8 p-6">
+      <div className="mx-auto max-w-2xl space-y-8 p-6">
         <Skeleton className="h-8 w-32" />
         <div className="flex items-center gap-6">
           <Skeleton className="h-24 w-24 rounded-full shrink-0" />
@@ -177,7 +176,9 @@ export default function ProfilePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="relative mx-auto max-w-2xl space-y-8">
+      <div className="pointer-events-none absolute -left-14 -top-10 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-14 top-20 h-48 w-48 rounded-full bg-accent/10 blur-3xl" />
 
       {/* ── Page Title ────────────────────────────────────────────────────── */}
       <div>
@@ -188,7 +189,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Hero Section: Avatar + Identity ───────────────────────────────── */}
-      <div className="flex items-center gap-6 p-6 border rounded-xl bg-muted/20">
+      <div className="flex items-center gap-6 rounded-xl border border-border/70 bg-card/90 p-6 shadow-sm">
 
         {/* Avatar with upload overlay */}
         <div className="relative group shrink-0">
@@ -247,7 +248,7 @@ export default function ProfilePage() {
           {profile?.isEmailVerified ? (
             <Badge
               variant="outline"
-              className="text-xs text-green-600 border-green-200 bg-green-50 gap-1"
+              className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300"
             >
               <CheckCircle2 className="h-3 w-3" />
               Email Verified
@@ -255,7 +256,7 @@ export default function ProfilePage() {
           ) : (
             <Badge
               variant="outline"
-              className="text-xs text-yellow-600 border-yellow-200 bg-yellow-50"
+              className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300"
             >
               Email Not Verified
             </Badge>
@@ -264,10 +265,10 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Profile Information ────────────────────────────────────────────── */}
-      <section className="border rounded-xl overflow-hidden">
+      <section className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm">
 
         {/* Section header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/30">
+        <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 px-5 py-4">
           <div>
             <h2 className="text-sm font-semibold">Profile Information</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -390,10 +391,10 @@ export default function ProfilePage() {
       </section>
 
       {/* ── Change Password ────────────────────────────────────────────────── */}
-      <section className="border rounded-xl overflow-hidden">
+      <section className="overflow-hidden rounded-xl border border-border/70 bg-card/90 shadow-sm">
 
         {/* Section header */}
-        <div className="px-5 py-4 border-b bg-muted/30">
+        <div className="border-b border-border/70 bg-muted/30 px-5 py-4">
           <h2 className="text-sm font-semibold">Change Password</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Use a strong password to keep your account secure
@@ -404,9 +405,9 @@ export default function ProfilePage() {
 
           {/* Success */}
           {passwordSuccess && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-700">
+            <Alert className="border-emerald-500/30 bg-emerald-500/10">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+              <AlertDescription className="text-emerald-700 dark:text-emerald-300">
                 Password changed successfully.
               </AlertDescription>
             </Alert>
@@ -524,7 +525,7 @@ export default function ProfilePage() {
             {/* Match indicator */}
             {confirmPassword && newPassword && (
               <p className={`text-xs font-medium flex items-center gap-1 ${
-                passwordsMatch ? 'text-green-500' : 'text-red-500'
+                passwordsMatch ? 'text-emerald-600 dark:text-emerald-300' : 'text-destructive'
               }`}>
                 {passwordsMatch ? (
                   <><CheckCircle2 className="h-3 w-3" /> Passwords match</>

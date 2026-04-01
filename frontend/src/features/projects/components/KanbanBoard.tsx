@@ -12,12 +12,13 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { useGetProjectMembersQuery, useGetProjectTasksQuery } from '../api';
 import type { KanbanData, ProjectRole, Task, TaskStatus } from '../types';
 import KanbanColumn from './KanbanColumn';
 import TaskCreateModal from '@/features/tasks/components/TaskCreateModal';
 import TaskDetailModal from './TaskDetailModal';
-import TaskCard from './TaskCard';
+import TaskCardDragPreview from './TaskCardDragPreview';
 import SubmitTaskModal from '@/features/tasks/components/SubmitTaskModal';
 import {
   useUpdateTaskStatusMutation,
@@ -87,7 +88,7 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 4 },
     })
   );
 
@@ -264,20 +265,10 @@ export default function KanbanBoard({ projectId, projectEndDate }: KanbanBoardPr
           ))}
         </div>
 
-        <DragOverlay dropAnimation={{
-          duration: 150,
-          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-        }}>
+        <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
           {activeTask ? (
-            <div className="rotate-2 opacity-95">
-              <TaskCard
-                task={activeTask}
-                projectId={projectId}
-                onTaskClick={() => {}}
-                isDragging
-                currentRole={currentRole}
-                currentUserId={currentUser?._id}
-              />
+            <div className="pointer-events-none opacity-95">
+              <TaskCardDragPreview task={activeTask} />
             </div>
 
           ) : null}

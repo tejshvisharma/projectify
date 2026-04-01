@@ -4,64 +4,136 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --background: 215 28% 97%;
+    --foreground: 223 26% 14%;
+    --card: 210 33% 99%;
+    --card-foreground: 223 26% 14%;
+    --popover: 210 33% 99%;
+    --popover-foreground: 223 26% 14%;
+    --primary: 224 78% 56%;
+    --primary-foreground: 210 40% 99%;
+    --secondary: 214 33% 93%;
+    --secondary-foreground: 224 20% 18%;
+    --muted: 214 32% 94%;
+    --muted-foreground: 220 14% 40%;
+    --accent: 193 85% 41%;
+    --accent-foreground: 210 40% 99%;
+    --destructive: 0 76% 57%;
+    --destructive-foreground: 210 40% 99%;
+    --border: 216 25% 86%;
+    --input: 216 25% 86%;
+    --ring: 224 78% 56%;
+    --success: 152 62% 40%;
+    --warning: 37 92% 50%;
+    --info: 202 88% 44%;
     --status-todo: 215 16% 55%;
     --status-in-progress: 221 83% 53%;
     --status-submitted: 42 96% 52%;
     --status-done: 142 71% 45%;
+    --shadow-color: 223 40% 15%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 222 26% 11%;
+    --foreground: 210 24% 93%;
+    --card: 222 25% 14%;
+    --card-foreground: 210 24% 93%;
+    --popover: 222 25% 14%;
+    --popover-foreground: 210 24% 93%;
+    --primary: 221 92% 66%;
+    --primary-foreground: 223 28% 11%;
+    --secondary: 220 21% 20%;
+    --secondary-foreground: 210 20% 94%;
+    --muted: 220 21% 19%;
+    --muted-foreground: 216 15% 71%;
+    --accent: 192 87% 45%;
+    --accent-foreground: 223 28% 11%;
+    --destructive: 0 75% 59%;
+    --destructive-foreground: 210 24% 96%;
+    --border: 220 18% 24%;
+    --input: 220 18% 24%;
+    --ring: 221 92% 66%;
+    --success: 152 61% 49%;
+    --warning: 40 94% 57%;
+    --info: 202 90% 60%;
     --status-todo: 215 20% 67%;
     --status-in-progress: 217 91% 61%;
     --status-submitted: 42 100% 60%;
     --status-done: 142 72% 50%;
+    --shadow-color: 220 45% 3%;
   }
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    @apply w-full overflow-x-hidden;
+  }
+
   * {
     @apply border-border;
   }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply min-h-screen bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 12% 14%, hsl(var(--primary) / 0.08), transparent 36%),
+      radial-gradient(circle at 88% 8%, hsl(var(--accent) / 0.08), transparent 30%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
+  }
+
+  h1 {
+    @apply text-3xl font-bold tracking-tight md:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  h4 {
+    @apply text-lg font-semibold;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .surface-card {
+    @apply rounded-xl border border-border/70 bg-card/90 shadow-sm backdrop-blur-sm;
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-color) / 0.05),
+      0 8px 24px hsl(var(--shadow-color) / 0.06);
+  }
+
+  .surface-hover {
+    @apply transition-all duration-200;
+  }
+
+  .surface-hover:hover {
+    @apply -translate-y-0.5 border-primary/25;
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-color) / 0.05),
+      0 12px 28px hsl(var(--shadow-color) / 0.08);
+  }
+
+  .text-caption {
+    @apply text-xs text-muted-foreground;
   }
 }
