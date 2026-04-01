@@ -11,12 +11,14 @@ Production: [Your production URL]/api/v1
 
 - [Authentication](#authentication)
 - [Projects](#projects)
+- [Project Dashboard](#project-dashboard)
 - [Project Members](#project-members)
 - [Tasks](#tasks)
 - [Leaderboard](#leaderboard)
 - [Comments](#comments)
 - [SubTasks](#subtasks)
 - [Notes](#notes)
+- [Health Check](#health-check)
 - [Common Patterns](#common-patterns)
 
 ---
@@ -410,6 +412,46 @@ Authorization: Bearer <accessToken>
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 10, max: 100)
 
+### Get Project By ID
+
+```http
+GET /projects/:projectId
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Authenticated user
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Project fetched successfully",
+  "data": {
+    "_id": "676a...",
+    "name": "My Project",
+    "description": "Project description",
+    "createdBy": {
+      "_id": "676a...",
+      "username": "johndoe",
+      "avatar": { "url": "https://...", "localPath": "" }
+    },
+    "endDate": "2025-12-31T23:59:59.000Z",
+    "githubRepo": "https://github.com/user/repo",
+    "tags": ["react", "nodejs"],
+    "createdAt": "2024-12-24T...",
+    "updatedAt": "2024-12-24T..."
+  }
+}
+```
+
+**Frontend Notes:**
+
+- Use this endpoint for project-level page bootstrap before members/tasks widgets load.
+- If the `projectId` is invalid, backend responds with `400`.
+- If project does not exist or user is unauthorized, handle `404` or `403` gracefully in UI routing.
+
 ### Update Project
 
 ```http
@@ -464,6 +506,124 @@ Authorization: Bearer <accessToken>
 ```
 
 **Note:** Cascades deletion to all project members, tasks, comments, subtasks, and notes.
+
+---
+
+## Project Dashboard
+
+### Get Project Dashboard Summary
+
+```http
+GET /projects/:projectId/dashboard/summary
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Any project member (viewer and above)
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Dashboard summary fetched successfully",
+  "data": {
+    "kpi": {
+      "totalTasks": 50,
+      "completedTasks": 20,
+      "completionRate": 40,
+      "overdueTasks": 5,
+      "totalCreditsEarned": 1250
+    },
+    "statusDistribution": [
+      { "status": "todo", "count": 10 },
+      { "status": "in_progress", "count": 15 },
+      { "status": "submitted", "count": 5 },
+      { "status": "done", "count": 20 }
+    ],
+    "recentActivity": [
+      {
+        "type": "contribution_approved",
+        "taskTitle": "Fix Login Bug",
+        "user": {
+          "username": "john_doe",
+          "avatar": {
+            "url": "https://...",
+            "localPath": ""
+          }
+        },
+        "timestamp": "2024-12-24T10:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Frontend Notes:**
+
+- `completionRate` is a whole-number percentage (`0-100`).
+- `statusDistribution` always includes `todo`, `in_progress`, `submitted`, and `done` with `0` fallback values.
+- `recentActivity` is sorted by latest contribution verification time and returns a maximum of 10 items.
+- When no tasks or contributions exist yet, KPI values are normalized to `0` and `recentActivity` is an empty array.
+
+### TypeScript Interfaces (Frontend Ready)
+
+```ts
+type Avatar = {
+  url?: string;
+  public_id?: string;
+  localPath?: string;
+};
+
+type DashboardKpi = {
+  totalTasks: number;
+  completedTasks: number;
+  completionRate: number;
+  overdueTasks: number;
+  totalCreditsEarned: number;
+};
+
+type DashboardStatusDistribution = {
+  status: "todo" | "in_progress" | "submitted" | "done";
+  count: number;
+};
+
+type DashboardRecentActivityItem = {
+  type: string;
+  taskTitle: string;
+  user: {
+    username: string;
+    avatar: Avatar;
+  };
+  timestamp: string | null;
+};
+
+type DashboardSummaryData = {
+  kpi: DashboardKpi;
+  statusDistribution: DashboardStatusDistribution[];
+  recentActivity: DashboardRecentActivityItem[];
+};
+
+type ApiResponse<T> = {
+  statuscode: number;
+  success: boolean;
+  message: string;
+  data: T;
+};
+```
+
+### TypeScript API Helper (Axios)
+
+```ts
+import axios from "axios";
+
+export const getProjectDashboardSummary = (projectId: string) =>
+  axios
+    .get<
+      ApiResponse<DashboardSummaryData>
+    >(`/projects/${projectId}/dashboard/summary`)
+    .then((res) => res.data.data);
+```
 
 ---
 
@@ -943,6 +1103,11 @@ Authorization: Bearer <accessToken>
 - `stats.onTimeTasks` descending
 - `updatedAt` ascending
 
+**Query Parameters:**
+
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+
 **Response (200):**
 
 ```json
@@ -999,6 +1164,11 @@ Authorization: Bearer <accessToken>
 - `stats.totalTasksCompleted` descending
 - `stats.onTimeTasks` descending
 - `updatedAt` ascending
+
+**Query Parameters:**
+
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
 
 **Response (200):**
 
@@ -1138,6 +1308,12 @@ export const getGlobalLeaderboard = (page = 1, limit = 10) =>
     >(`/leaderboard/global?page=${page}&limit=${limit}`)
     .then((res) => res.data.data);
 ```
+
+### Common Leaderboard Error Cases
+
+- `401`: Missing or expired token.
+- `403`: User is not a project member (project leaderboard only).
+- `404`: Project not found (project leaderboard only).
 
 ---
 
@@ -1635,6 +1811,34 @@ Authorization: Bearer <accessToken>
 
 ---
 
+## Health Check
+
+### API Health Probe
+
+```http
+GET /healthcheck
+```
+
+**Auth Required:** No
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "API is healthy ✅",
+  "data": null
+}
+```
+
+**Frontend Notes:**
+
+- Useful for environment diagnostics in admin/debug pages.
+- Safe to call on app bootstrap for basic backend availability checks.
+
+---
+
 ## Common Patterns
 
 ### Role Hierarchy
@@ -1903,5 +2107,5 @@ For issues or questions:
 3. Ensure projectId is correct in new comment/subtask routes
 4. Check pagination response structure for list endpoints
 
-**Last Updated:** December 24, 2025
+**Last Updated:** April 1, 2026
 **API Version:** 1.0.0

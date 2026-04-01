@@ -21,8 +21,19 @@ All authentication endpoints remain unchanged:
 
 - `POST /api/v1/projects` - Create project (requires auth)
 - `GET /api/v1/projects?page=1&limit=10` - Get user's projects (requires auth, **paginated**)
+- `GET /api/v1/projects/:projectId` - Get project by id (requires auth)
 - `PATCH /api/v1/projects/:projectId` - Update project (requires MANAGEMENT role)
 - `DELETE /api/v1/projects/:projectId` - Delete project (requires OWNER role only)
+
+### Project Dashboard
+
+- `GET /api/v1/projects/:projectId/dashboard/summary` - Get dashboard summary (requires VIEWER role)
+
+Dashboard response data includes:
+
+- `kpi` - `totalTasks`, `completedTasks`, `completionRate`, `overdueTasks`, `totalCreditsEarned`
+- `statusDistribution` - grouped task counts by status
+- `recentActivity` - latest verified contributions (max 10), populated with user and task
 
 ### Project Members
 
@@ -37,6 +48,13 @@ All authentication endpoints remain unchanged:
 - `POST /api/v1/projects/:projectId/tasks` - Create task (requires MANAGEMENT role)
 - `PATCH /api/v1/projects/:projectId/tasks/:taskId` - Update task (requires MANAGEMENT role)
 - `DELETE /api/v1/projects/:projectId/tasks/:taskId` - Delete task (requires MANAGEMENT role)
+- `PATCH /api/v1/projects/:projectId/tasks/:taskId/submit` - Submit task for review (requires EDITOR role)
+- `PATCH /api/v1/projects/:projectId/tasks/:taskId/verify` - Verify task submission (requires MANAGEMENT role)
+
+### Leaderboard
+
+- `GET /api/v1/projects/:projectId/leaderboard` - Get project leaderboard (requires VIEWER role)
+- `GET /api/v1/leaderboard/global` - Get global leaderboard (requires auth)
 
 ### Notes
 
@@ -60,6 +78,10 @@ All authentication endpoints remain unchanged:
 - `GET /api/v1/subtasks/:projectId/tasks/:taskId?page=1&limit=10` - Get task subtasks (requires VIEWER role, paginated)
 - `PATCH /api/v1/subtasks/:projectId/:SubTaskId` - Update subtask (requires EDITOR role)
 - `DELETE /api/v1/subtasks/:projectId/:SubTaskId` - Delete subtask (requires EDITOR role)
+
+## System Endpoints
+
+- `GET /api/v1/healthcheck` - Service health check (public)
 
 ## Role Hierarchy
 
