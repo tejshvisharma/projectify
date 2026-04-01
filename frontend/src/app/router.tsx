@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -11,6 +11,7 @@ import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 // Project Pages
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
+import ProjectDashboardPage from '@/features/dashboard/pages/ProjectDashboardPage';
 import GlobalLeaderboardPage from '@/features/projects/pages/GlobalLeaderboardPage';
 import ProfilePage from '@/features/auth/pages/ProfilePage';
 import LandingPage from '@/pages/LandingPage';
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
           {
             path: '/projects/:projectId',
             element: <ProjectDetailsPage />,
+          },
+          {
+            path: '/projects/:projectId/dashboard',
+            element: <ProjectDashboardPage />,
           },
           {
             path: '/leaderboard',
