@@ -37,7 +37,7 @@ router.route("/register")
 
 router
   .route("/verify-email")
-  .get([query("token").isString().trim().notEmpty()], validate, verifyEmail);
+  .post([query("token").isString().trim().notEmpty()], validate, verifyEmail);
 
 router
   .route("/resend-verification")

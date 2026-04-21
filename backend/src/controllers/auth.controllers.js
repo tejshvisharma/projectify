@@ -52,7 +52,7 @@ const registerUser = asyncHandler(async (req, res) => {
   user.save();
 
   // send verification email to user
-  const emailVerificationUrl = `${process.env.API_BASE_URL}/auth/verify-email?token=${unHashedToken}`;
+  const emailVerificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${unHashedToken}`;
   const mailContent = emailVerificationMailGenContent(
     user.username,
     emailVerificationUrl,
@@ -387,7 +387,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   user.forgetPasswordExpiry = tokenExpiry;
 
   await user.save({ validateBeforeSave: false });
-  const resetPasswordUrl = `${process.env.API_BASE_URL}/auth/reset-password?token=${unHashedToken}`;
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${unHashedToken}`;
 
   const userName = user.username;
 

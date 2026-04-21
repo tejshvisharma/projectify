@@ -7,6 +7,8 @@ import LoginPage from '@/features/auth/pages/LoginPage';
 import RegisterPage from '@/features/auth/pages/RegisterPage';
 import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
+import VerifyEmailPage from '@/features/auth/pages/VerifyEmailPage';
+import ResendVerificationEmailPage from '@/features/auth/pages/ResendVerificationEmailPage';
 
 // Project Pages
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
@@ -30,6 +32,14 @@ export const router = createBrowserRouter([
   {
     path: '/reset-password',
     element: <ResetPasswordPage />,
+  },
+  {
+    path: '/verify-email',
+    element: <VerifyEmailPage />,
+  },
+  {
+    path: '/resend-verification-email',
+    element: <ResendVerificationEmailPage />,
   },
   {
     element: <PublicRoute />,

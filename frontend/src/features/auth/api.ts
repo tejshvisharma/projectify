@@ -85,7 +85,7 @@ export const authApi = {
         apiClient.post("/auth/register", payload),
 
     verifyEmail: (token: string) =>
-        apiClient.get(`/auth/verify-email?token=${token}`),
+        apiClient.post(`/auth/verify-email?token=${encodeURIComponent(token)}`),
 
     resendVerification: (email: string) =>
         apiClient.post("/auth/resend-verification", { email }),
@@ -171,7 +171,7 @@ export function useUpdateProfileMutation() {
         onSuccess: (updatedUser) => {
             // Update React Query cache
             queryClient.setQueryData(authKeys.profile, updatedUser);
-            
+
             setUser(updatedUser);
         },
     });
