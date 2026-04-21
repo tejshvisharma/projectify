@@ -48,6 +48,8 @@ import dashboardRouter from "./routes/dashboard.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import SubTaskRouter from "./routes/subTask.routes.js";
 import leaderboardRouter from "./routes/leaderboard.routes.js";
+import userRouter from "./routes/user.routes.js";
+import projectInviteRouter from "./routes/projectInvite.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
@@ -56,6 +58,8 @@ app.use("/api/v1/projects", dashboardRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/subtasks", SubTaskRouter);
 app.use("/api/v1/leaderboard", leaderboardRouter);
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/invites", projectInviteRouter);
 
 app.use(errorHandler);
 

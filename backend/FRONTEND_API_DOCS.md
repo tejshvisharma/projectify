@@ -13,6 +13,8 @@ Production: [Your production URL]/api/v1
 - [Projects](#projects)
 - [Project Dashboard](#project-dashboard)
 - [Project Members](#project-members)
+- [Users](#users)
+- [Invites](#invites)
 - [Tasks](#tasks)
 - [Leaderboard](#leaderboard)
 - [Comments](#comments)
@@ -59,7 +61,7 @@ Content-Type: application/json
 ### Verify Email
 
 ```http
-GET /auth/verify-email?token=<verification_token>
+POST /auth/verify-email?token=<verification_token>
 ```
 
 **Response (200):**
@@ -769,6 +771,212 @@ Authorization: Bearer <accessToken>
   }
 }
 ```
+
+### Add Or Invite Project Member (By Email)
+
+```http
+POST /projects/:projectId/members/invite
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "role": "member"
+}
+```
+
+**Required Role:** `project_admin` or `owner`
+
+**Available Roles:** `viewer`, `member`, `project_admin`, `owner`
+
+Behavior:
+
+- If email belongs to an existing user not already in the project, member is added directly.
+- If email does not belong to an existing user, a pending invite is created (24-hour expiry).
+
+**Response (201) - Existing User Added:**
+
+```json
+{
+  "statuscode": 201,
+  "success": true,
+  "message": "Member added to project",
+  "data": {
+    "_id": "676a...",
+    "user": {
+      "_id": "676a...",
+      "username": "janedoe",
+      "email": "jane@example.com",
+      "avatar": {
+        "url": "https://...",
+        "localPath": ""
+      }
+    },
+    "project": "676a...",
+    "role": "member",
+    "createdAt": "2026-04-21T...",
+    "updatedAt": "2026-04-21T..."
+  }
+}
+```
+
+**Response (201) - Invite Created:**
+
+```json
+{
+  "statuscode": 201,
+  "success": true,
+  "message": "Invite created successfully",
+  "data": {
+    "_id": "676a...",
+    "email": "newuser@example.com",
+    "project": "676a...",
+    "role": "member",
+    "invitedBy": "676a...",
+    "expiresAt": "2026-04-22T...",
+    "status": "pending"
+  }
+}
+```
+
+**Common Error Cases:**
+
+- `409` if user is already a project member.
+- `409` if a pending invite already exists for the same `email + project`.
+
+### Delete Pending Project Invite
+
+```http
+DELETE /projects/:projectId/invites/:inviteId
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** `project_admin` or `owner`
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Invite removed successfully",
+  "data": {
+    "_id": "676a...",
+    "email": "newuser@example.com",
+    "project": "676a...",
+    "role": "member",
+    "invitedBy": "676a...",
+    "token": "...",
+    "expiresAt": "2026-04-22T...",
+    "status": "pending",
+    "createdAt": "2026-04-21T...",
+    "updatedAt": "2026-04-21T..."
+  }
+}
+```
+
+---
+
+## Users
+
+### Search Users
+
+```http
+GET /users/search?q=john&page=1&limit=10
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Authenticated user
+
+**Query Parameters:**
+
+- `q` (required): Search text (matches `username` or `email`, case-insensitive)
+- `page` (optional): Page number (default: `1`)
+- `limit` (optional): Items per page (default: `10`, max: `100`)
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Users fetched successfully",
+  "data": {
+    "users": [
+      {
+        "_id": "676a...",
+        "username": "johndoe",
+        "email": "john@example.com",
+        "avatar": {
+          "url": "https://...",
+          "localPath": ""
+        }
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "totalItems": 1,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPrevPage": false
+    }
+  }
+}
+```
+
+---
+
+## Invites
+
+### Accept Project Invite
+
+```http
+POST /invites/:token/accept
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Authenticated user
+
+**Important Validation:**
+
+- Invite must exist.
+- Invite status must be `pending`.
+- Invite must not be expired.
+- Logged-in user email must match invite email.
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "Invite accepted successfully",
+  "data": {
+    "_id": "676a...",
+    "user": {
+      "_id": "676a...",
+      "username": "johndoe",
+      "email": "john@example.com",
+      "avatar": {
+        "url": "https://...",
+        "localPath": ""
+      }
+    },
+    "project": "676a...",
+    "role": "member",
+    "createdAt": "2026-04-21T...",
+    "updatedAt": "2026-04-21T..."
+  }
+}
+```
+
+**Common Error Cases:**
+
+- `403`: Invite is not assigned to the logged-in account.
+- `404`: Invite not found or project no longer exists.
+- `409`: Invite is no longer pending.
+- `410`: Invite has expired.
 
 ---
 
@@ -1909,6 +2117,7 @@ Practical workflow:
 - `403` - Forbidden (insufficient permissions, not a project member)
 - `404` - Not Found
 - `409` - Conflict (duplicate entry, e.g., user already in project)
+- `410` - Gone (expired invite links)
 - `422` - Unprocessable Entity (validation failed)
 - `429` - Too Many Requests (rate limit exceeded)
 - `500` - Internal Server Error
@@ -2053,6 +2262,17 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 - New endpoint: `GET /projects/:projectId/leaderboard`
 - New endpoint: `GET /leaderboard/global`
 
+6. **Member Invite + User Search Endpoints Added:**
+
+- New endpoint: `GET /users/search?q=&page=&limit=`
+- New endpoint: `POST /projects/:projectId/members/invite`
+- New endpoint: `DELETE /projects/:projectId/invites/:inviteId`
+- New endpoint: `POST /invites/:token/accept`
+
+7. **Auth Verify Method Updated:**
+
+- Verify email now uses `POST /auth/verify-email?token=<token>`
+
 ### Frontend Implementation Tips
 
 ```javascript
@@ -2107,5 +2327,5 @@ For issues or questions:
 3. Ensure projectId is correct in new comment/subtask routes
 4. Check pagination response structure for list endpoints
 
-**Last Updated:** April 1, 2026
+**Last Updated:** April 21, 2026
 **API Version:** 1.0.0

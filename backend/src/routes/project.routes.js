@@ -42,6 +42,10 @@ import {
   updateTaskValidator,
   verifyTaskValidator,
 } from "../validators/task.validators.js";
+import {
+  deleteProjectInviteValidator,
+  inviteOrAddProjectMemberValidator,
+} from "../validators/projectInvite.validators.js";
 
 import {
   getNotes,
@@ -62,6 +66,10 @@ import {
   submitTask,
   verifyTask,
 } from "../controllers/task.submit-verify.controller.js";
+import {
+  deleteProjectInvite,
+  inviteOrAddProjectMember,
+} from "../controllers/projectInvite.controller.js";
 
 const router = Router();
 
@@ -115,6 +123,26 @@ router
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     deleteProjectMember,
+  );
+
+router
+  .route("/:projectId/members/invite")
+  .post(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    inviteOrAddProjectMemberValidator(),
+    validate,
+    inviteOrAddProjectMember,
+  );
+
+router
+  .route("/:projectId/invites/:inviteId")
+  .delete(
+    isLoggedIn,
+    validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
+    deleteProjectInviteValidator(),
+    validate,
+    deleteProjectInvite,
   );
 
 // for tasks routing :
