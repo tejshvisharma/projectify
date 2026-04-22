@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Loader2, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Loader2, Search, UserPlus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -19,10 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { apiClient } from '@/lib/axios';
-import type { ApiResponse, UserSummary } from '@/features/projects/types';
-import { useAddMemberMutation } from '../api';
+import { toast } from 'sonner';
+import type { UserSummary } from '@/features/projects/types';
+import { useAddMemberMutation, useSearchUsersQuery } from '../api';
 import { ASSIGNABLE_ROLES, ROLE_CONFIG, type ProjectRole } from '../types';
+
+const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_LIMIT = 10;
 
 interface AddMemberModalProps {
   open: boolean;
@@ -38,76 +42,116 @@ export default function AddMemberModal({
   projectId,
   existingMemberIds,
 }: AddMemberModalProps) {
-  const [searchQuery, setSearchQuery]     = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchPage, setSearchPage] = useState(1);
   const [searchResults, setSearchResults] = useState<UserSummary[]>([]);
-  const [selectedUser, setSelectedUser]   = useState<UserSummary | null>(null);
-  const [role, setRole]                   = useState<ProjectRole>('member');
-  const [isSearching, setIsSearching]     = useState(false);
-  const [searchError, setSearchError]     = useState('');
+  const [locallyAddedIds, setLocallyAddedIds] = useState<string[]>([]);
+  const [role, setRole] = useState<ProjectRole>('member');
+  const [addingUserId, setAddingUserId] = useState<string | null>(null);
 
   const addMember = useAddMemberMutation(projectId);
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isFetching: isSearchFetching,
+    isPlaceholderData,
+    error: searchError,
+  } = useSearchUsersQuery({
+    query: debouncedQuery,
+    page: searchPage,
+    limit: SEARCH_LIMIT,
+    enabled: open,
+  });
 
-  // ── Search users by username ───────────────────────────────────────────────
-  const handleSearch = async () => {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) return;
+  const addedMemberIds = useMemo(
+    () => new Set([...existingMemberIds, ...locallyAddedIds]),
+    [existingMemberIds, locallyAddedIds]
+  );
 
-    setIsSearching(true);
-    setSearchError('');
+  const hasSearched = debouncedQuery.length > 0;
+  const hasResults = searchResults.length > 0;
+  const canLoadMore = Boolean(searchData?.meta?.hasNextPage);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchQuery, open]);
+
+  useEffect(() => {
+    setSearchPage(1);
     setSearchResults([]);
-    setSelectedUser(null);
+  }, [debouncedQuery]);
 
-    try {
-      // Uses the auth profile endpoint pattern — adjust if your backend
-      // has a dedicated user search endpoint
-      const response = await apiClient.get<ApiResponse<UserSummary[]>>(
-        `/users/search?query=${encodeURIComponent(trimmed)}`
-      );
-      const results = response.data.data;
+  useEffect(() => {
+    if (!searchData || isPlaceholderData) return;
 
-      // Filter out users already in the project
-      const filtered = results.filter(
-        (u) => !existingMemberIds.includes(u._id)
-      );
-
-      if (filtered.length === 0) {
-        setSearchError('No users found or all results are already members.');
+    setSearchResults((previous) => {
+      if (searchPage === 1) {
+        return searchData.users;
       }
 
-      setSearchResults(filtered);
-    } catch {
-      setSearchError('Search failed. Please try again.');
+      const previousIds = new Set(previous.map((user) => user._id));
+      const nextUsers = searchData.users.filter(
+        (user) => !previousIds.has(user._id)
+      );
+      return [...previous, ...nextUsers];
+    });
+  }, [searchData, searchPage, isPlaceholderData]);
+
+  const handleAddMember = async (user: UserSummary) => {
+    if (addedMemberIds.has(user._id) || addMember.isPending) return;
+
+    setAddingUserId(user._id);
+
+    try {
+      await addMember.mutateAsync({
+        userId: user._id,
+        role,
+      });
+
+      setLocallyAddedIds((previous) =>
+        previous.includes(user._id) ? previous : [...previous, user._id]
+      );
+      toast.success(`${user.username} added to project`);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ?? 'Failed to add member. Please try again.';
+      toast.error(message);
     } finally {
-      setIsSearching(false);
+      setAddingUserId(null);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch();
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedUser) return;
-
-    await addMember.mutateAsync({
-      userId: selectedUser._id,
-      role,
-    });
-
-    handleClose();
+  const handleLoadMore = () => {
+    if (!canLoadMore || isSearchFetching) return;
+    setSearchPage((previous) => previous + 1);
   };
 
   const handleClose = () => {
     setSearchQuery('');
+    setDebouncedQuery('');
+    setSearchPage(1);
     setSearchResults([]);
-    setSelectedUser(null);
+    setLocallyAddedIds([]);
     setRole('member');
-    setSearchError('');
+    setAddingUserId(null);
     onClose();
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      handleClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Member</DialogTitle>
@@ -117,106 +161,163 @@ export default function AddMemberModal({
         </DialogHeader>
 
         <div className="space-y-4">
-
-          {/* Search input */}
           <div className="space-y-1.5">
-            <Label>Search by username</Label>
-            <div className="flex gap-2">
+            <Label htmlFor="member-search">Search users</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                id="member-search"
                 placeholder="johndoe"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
+                className="pl-9 pr-9"
                 autoFocus
               />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleSearch}
-                disabled={!searchQuery.trim() || isSearching}
-                aria-label="Search users"
-              >
-                {isSearching ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-              </Button>
+              {isSearchFetching && (
+                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+              )}
             </div>
           </div>
 
-          {/* Search error */}
-          {searchError && (
-            <p className="text-sm text-destructive">{searchError}</p>
-          )}
+          <div className="space-y-1.5">
+            <Label>Assign role</Label>
+            <Select
+              value={role}
+              onValueChange={(value) => setRole(value as ProjectRole)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ASSIGNABLE_ROLES.map((assignableRole) => (
+                  <SelectItem key={assignableRole} value={assignableRole}>
+                    <span
+                      className={`
+                        text-xs font-medium px-2 py-0.5 rounded-full border
+                        ${ROLE_CONFIG[assignableRole].className}
+                      `}
+                    >
+                      {ROLE_CONFIG[assignableRole].label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Search results */}
-          {searchResults.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Select user</Label>
-              <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-                {searchResults.map((user) => (
-                  <button
-                    key={user._id}
-                    onClick={() => setSelectedUser(user)}
-                    className={`
-                      w-full flex items-center gap-3 px-3 py-2.5
-                      hover:bg-muted/50 transition-colors text-left
-                      ${selectedUser?._id === user._id
-                        ? 'bg-primary/5 border-l-2 border-l-primary'
-                        : ''
-                      }
-                    `}
-                  >
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={user.avatar?.url} />
-                      <AvatarFallback className="text-xs">
-                        {user.username.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">
-                        {user.username}
-                      </p>
-                      {user.email && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {user.email}
-                        </p>
-                      )}
+          <div className="space-y-2">
+            <Label>Search results</Label>
+
+            {!hasSearched && (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                Start typing to search users by username or email.
+              </div>
+            )}
+
+            {hasSearched && isSearchLoading && !hasResults && (
+              <div className="space-y-2 rounded-lg border p-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-24" />
+                      <Skeleton className="h-3 w-40" />
                     </div>
-                  </button>
+                    <Skeleton className="h-8 w-20" />
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Role selector — only show after user is selected */}
-          {selectedUser && (
-            <div className="space-y-1.5">
-              <Label>Assign role</Label>
-              <Select
-                value={role}
-                onValueChange={(v) => setRole(v as ProjectRole)}
+            {hasSearched && !isSearchLoading && !hasResults && !searchError && (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                No users found.
+              </div>
+            )}
+
+            {searchError && hasSearched && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                Search failed. Please try again.
+              </div>
+            )}
+
+            {hasResults && (
+              <div className="rounded-lg border divide-y max-h-64 overflow-y-auto">
+                {searchResults.map((user) => {
+                  const isAdded = addedMemberIds.has(user._id);
+                  const isAddingThisUser =
+                    addMember.isPending && addingUserId === user._id;
+
+                  return (
+                    <div
+                      key={user._id}
+                      className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/50 focus-within:bg-muted/50"
+                    >
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarImage src={user.avatar?.url} />
+                        <AvatarFallback className="text-xs">
+                          {user.username.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{user.username}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.email || 'No email available'}
+                        </p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isAdded ? 'secondary' : 'outline'}
+                        onClick={() => void handleAddMember(user)}
+                        disabled={isAdded || addMember.isPending}
+                        aria-label={
+                          isAdded
+                            ? `${user.username} is already in this project`
+                            : `Add ${user.username} as ${ROLE_CONFIG[role].label}`
+                        }
+                      >
+                        {isAddingThisUser ? (
+                          <>
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                            Adding...
+                          </>
+                        ) : isAdded ? (
+                          'Added'
+                        ) : (
+                          <>
+                            <UserPlus className="mr-2 h-3.5 w-3.5" />
+                            Add
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {hasResults && canLoadMore && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleLoadMore}
+                disabled={isSearchFetching}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ASSIGNABLE_ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      <span className={`
-                        text-xs font-medium px-2 py-0.5 rounded-full border
-                        ${ROLE_CONFIG[r].className}
-                      `}>
-                        {ROLE_CONFIG[r].label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
+                {isSearchFetching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More'
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         <DialogFooter>
@@ -225,20 +326,7 @@ export default function AddMemberModal({
             onClick={handleClose}
             disabled={addMember.isPending}
           >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!selectedUser || addMember.isPending}
-          >
-            {addMember.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                Adding...
-              </>
-            ) : (
-              'Add Member'
-            )}
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>

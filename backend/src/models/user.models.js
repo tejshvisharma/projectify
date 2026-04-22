@@ -40,6 +40,7 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
       unique: true,
+      index: true,
     },
     fullName: {
       type: String,
