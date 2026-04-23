@@ -42,29 +42,34 @@ const processQueue = (error: unknown, tokenRefreshed = false) => {
 apiClient.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & {
+        const originalRequest = error.config as (InternalAxiosRequestConfig & {
             _retry?: boolean;
-        };
+        }) | undefined;
 
         if (!error.response || error.response.status !== 401) {
+            return Promise.reject(error);
+        }
+
+        if (!originalRequest) {
+            return Promise.reject(error);
+        }
+
+        const isAuthRoute =
+            originalRequest.url?.includes('/auth/login') ||
+            originalRequest.url?.includes('/auth/register');
+
+        if (isAuthRoute) {
             return Promise.reject(error);
         }
 
         // Prevent retrying refresh endpoint itself
         if (originalRequest.url?.includes('/auth/refresh-token')) {
             useAuthStore.getState().clearUser();
-            // Optional: redirect in a microtask to avoid blocking
-            setTimeout(() => {
-                window.location.href = '/login';
-            }, 0);
             return Promise.reject(error);
         }
 
         if (originalRequest._retry) {
             useAuthStore.getState().clearUser();
-            setTimeout(() => {
-                window.location.href = '/login';
-            }, 0);
             return Promise.reject(error);
         }
 
@@ -82,15 +87,12 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-            await apiClient.post("/auth/refresh-token");
+            await authHydrationClient.post("/auth/refresh-token");
             processQueue(null, true);
             return apiClient(originalRequest);
         } catch (refreshError) {
             processQueue(refreshError, false);
             useAuthStore.getState().clearUser();
-            setTimeout(() => {
-                window.location.href = '/login';
-            }, 0);
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;

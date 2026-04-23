@@ -1,44 +1,36 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { apiClient, authHydrationClient } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { LoginPayload, RegisterPayload, UserProfile } from "./types";
 // Types
-interface LoginCredentials {
-    email: string;
-    password: string;
-}
-
-interface RegisterData {
-    username: string;
-    fullName: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-}
-
-interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: string;
-}
-
-interface AuthResponse {
-    success: boolean;
-    data: {
-        user: User;
-    };
+interface ApiResponse<T> {
+    statusCode: number;
+    data: T;
     message: string;
 }
 
+type AuthResponse = ApiResponse<{ user: UserProfile }>;
+type RegisterResponse = ApiResponse<null>;
+
+interface UserResponseEnvelope {
+    user: UserProfile;
+}
+
+const extractUser = (data: UserProfile | UserResponseEnvelope): UserProfile => {
+    if (typeof data === 'object' && data !== null && 'user' in data) {
+        return data.user;
+    }
+    return data;
+};
+
 // API functions
-const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/login', credentials);
+const login = async (credentials: LoginPayload): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
     return response.data;
 };
 
-const register = async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/register', data);
+const register = async (data: RegisterPayload): Promise<RegisterResponse> => {
+    const response = await apiClient.post<RegisterResponse>('/auth/register', data);
     return response.data;
 };
 
@@ -74,7 +66,6 @@ export const useLogoutMutation = () => {
         mutationFn: logout,
         onSuccess: () => {
             clearUser();
-            window.location.href = '/login';
         },
     });
 };
@@ -97,11 +88,11 @@ export const authApi = {
         apiClient.post("/auth/logout"),
 
     refreshToken: () =>
-        apiClient.post("/auth/refresh-token"),
+        authHydrationClient.post("/auth/refresh-token"),
 
     getProfile: async (): Promise<UserProfile> => {
-        const res = await apiClient.get("/auth/profile");
-        return res.data.data;
+        const res = await apiClient.get<ApiResponse<UserResponseEnvelope | UserProfile>>("/auth/profile");
+        return extractUser(res.data.data);
     },
 
     changePassword: (payload: { oldPassword: string; newPassword: string }) =>
@@ -127,13 +118,6 @@ export const authApi = {
         apiClient.post(`/auth/reset-password?token=${token}`, { newPassword }),
 };
 
-interface ApiResponse<T> {
-    statuscode: number;
-    success: boolean;
-    message: string;
-    data: T;
-}
-
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const authKeys = {
     profile: ['auth', 'profile'] as const,
@@ -144,10 +128,10 @@ export function useProfileQuery() {
     return useQuery({
         queryKey: authKeys.profile,
         queryFn: async () => {
-            const response = await apiClient.get<ApiResponse<UserProfile>>(
+            const response = await apiClient.get<ApiResponse<UserResponseEnvelope | UserProfile>>(
                 '/auth/profile'
             );
-            return response.data.data;
+            return extractUser(response.data.data);
         },
     });
 }

@@ -37,18 +37,13 @@ export default function RegisterPage() {
 
     try {
       const res = await registerMutation.mutateAsync({ username, fullName: username, email, password, confirmPassword });
-      if (res && res.success) {
-        setSuccess((res.message || 'Registered successfully, check your email for verification, after that try to login.'));
-        setError('');
-        setFieldErrors({});
-        setUsername('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-      } else {
-        setError(res?.message || 'Registration failed. Please try again.');
-        setSuccess('');
-      }
+      setSuccess((res.message || 'Registered successfully, check your email for verification, after that try to login.'));
+      setError('');
+      setFieldErrors({});
+      setUsername('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (err: any) {
       const apiErrors = err.response?.data?.errors;
       if (Array.isArray(apiErrors)) {
