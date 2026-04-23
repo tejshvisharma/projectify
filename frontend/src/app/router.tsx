@@ -14,6 +14,7 @@ import ResendVerificationEmailPage from '@/features/auth/pages/ResendVerificatio
 import ProjectsListPage from '@/features/projects/pages/ProjectsListPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
 import ProjectDashboardPage from '@/features/dashboard/pages/ProjectDashboardPage';
+import UserDashboardPage from '@/features/dashboard/pages/UserDashboardPage';
 import GlobalLeaderboardPage from '@/features/projects/pages/GlobalLeaderboardPage';
 import ProfilePage from '@/features/auth/pages/ProfilePage';
 import LandingPage from '@/pages/LandingPage';
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
           {
             path: '/projects/:projectId/dashboard',
             element: <ProjectDashboardPage />,
+          },
+          {
+            path: '/dashboard',
+            element: <UserDashboardPage />,
           },
           {
             path: '/leaderboard',

@@ -38,3 +38,73 @@ export interface DashboardSummaryData {
 }
 
 export type DashboardSummaryResponse = ApiResponse<DashboardSummaryData>;
+
+export interface DashboardProjectRef {
+    _id: string;
+    name: string;
+}
+
+export interface UserDashboardTaskItem {
+    _id: string;
+    title: string;
+    status: DashboardTaskStatus;
+    dueDate?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    completionAt?: string | null;
+    project: DashboardProjectRef;
+}
+
+export interface UserDashboardTaskBuckets {
+    assigned: UserDashboardTaskItem[];
+    inProgress: UserDashboardTaskItem[];
+    submitted: UserDashboardTaskItem[];
+    upcoming: UserDashboardTaskItem[];
+    overdue: UserDashboardTaskItem[];
+    recent: UserDashboardTaskItem[];
+    completed: UserDashboardTaskItem[];
+}
+
+export interface UserDashboardMention {
+    _id: string;
+    content: string;
+    createdAt: string;
+    project: DashboardProjectRef;
+    creator: {
+        _id: string;
+        username: string;
+        avatar: DashboardAvatar;
+    };
+}
+
+export type UserDashboardActivityType =
+    | 'task_submitted'
+    | 'task_approved'
+    | 'task_rejected'
+    | 'task_assigned';
+
+export interface UserDashboardActivityItem {
+    type: UserDashboardActivityType;
+    taskId: string;
+    taskTitle: string;
+    project: DashboardProjectRef;
+    timestamp: string | null;
+    reason?: string;
+}
+
+export interface UserDashboardStats {
+    totalAssigned: number;
+    totalCompleted: number;
+    totalPending: number;
+    totalOverdue: number;
+}
+
+export interface UserDashboardData {
+    tasks: UserDashboardTaskBuckets;
+    mentions: UserDashboardMention[];
+    stats: UserDashboardStats;
+    activity: UserDashboardActivityItem[];
+    suggestions: string[];
+}
+
+export type UserDashboardResponse = ApiResponse<UserDashboardData>;

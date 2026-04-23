@@ -36,7 +36,7 @@ const NAV_LINKS = [
     to: '/dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    enabled: false, // disabled until built
+    enabled: true,
   },
   {
     to: '/leaderboard',

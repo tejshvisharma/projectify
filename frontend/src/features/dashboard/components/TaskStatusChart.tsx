@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ClipboardList } from 'lucide-react';
+import { BarChart3, ClipboardList } from 'lucide-react';
 import {
   Cell,
   Pie,
@@ -21,7 +21,10 @@ import type {
 } from '../types/dashboard.types';
 
 interface TaskStatusChartProps {
-  projectId: string;
+  projectId?: string;
+  createTaskHref?: string;
+  emptyActionLabel?: string;
+  compact?: boolean;
   statusDistribution: DashboardStatusDistribution[];
 }
 
@@ -84,8 +87,15 @@ function CustomTooltip({ active, payload }: ChartTooltipProps) {
 
 export default function TaskStatusChart({
   projectId,
+  createTaskHref,
+  emptyActionLabel = 'Create First Task',
+  compact = false,
   statusDistribution,
 }: TaskStatusChartProps) {
+  const emptyActionHref = createTaskHref ?? (projectId ? `/projects/${projectId}` : '/projects');
+  const chartHeightClass = compact ? 'h-[185px]' : 'h-[260px]';
+  const emptyStateHeightClass = compact ? 'h-[220px]' : 'h-[300px]';
+
   const chartData = ORDERED_STATUSES.map((status) => {
     const count = statusDistribution.find((item) => item.status === status)?.count ?? 0;
 
@@ -103,22 +113,25 @@ export default function TaskStatusChart({
   if (!hasTaskData) {
     return (
       <Card className="h-full border-dashed border-border/80">
-        <CardHeader>
-          <CardTitle className="text-lg">Task Status Distribution</CardTitle>
-          <CardDescription>Track where project work is currently blocked or flowing.</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
+            Task Status Distribution
+          </CardTitle>
+          <CardDescription className="max-w-[46ch] leading-relaxed">Track where project work is currently blocked or flowing.</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[300px] flex-col items-center justify-center gap-4 text-center">
+        <CardContent className={`flex ${emptyStateHeightClass} flex-col items-center justify-center gap-4 text-center`}>
           <div className="rounded-full bg-muted p-3">
             <ClipboardList className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
           </div>
           <div className="space-y-1">
             <p className="text-base font-medium">No tasks yet</p>
-            <p className="max-w-sm text-sm text-muted-foreground">
+            <p className="max-w-[40ch] text-sm leading-relaxed text-muted-foreground">
               Create your first task to unlock status analytics and sprint flow visibility.
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link to={`/projects/${projectId}`}>Create First Task</Link>
+            <Link to={emptyActionHref}>{emptyActionLabel}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -127,20 +140,23 @@ export default function TaskStatusChart({
 
   return (
     <Card className="h-full border-border/70 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-lg">Task Status Distribution</CardTitle>
-        <CardDescription>{totalTasks} total tasks across workflow states.</CardDescription>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
+          Task Status Distribution
+        </CardTitle>
+        <CardDescription className="max-w-[46ch] leading-relaxed">{totalTasks} total tasks across workflow states.</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="h-[260px]" role="img" aria-label="Donut chart showing task statuses">
+      <CardContent className={compact ? 'space-y-4' : 'grid gap-4 lg:grid-cols-[1.1fr_0.9fr]'}>
+        <div className={chartHeightClass} role="img" aria-label="Donut chart showing task statuses">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 dataKey="count"
                 nameKey="name"
-                innerRadius={65}
-                outerRadius={95}
+                innerRadius={compact ? 48 : 65}
+                outerRadius={compact ? 74 : 95}
                 paddingAngle={2}
                 stroke="hsl(var(--background))"
                 strokeWidth={2}
@@ -154,24 +170,24 @@ export default function TaskStatusChart({
           </ResponsiveContainer>
         </div>
 
-        <ul className="space-y-3" aria-label="Task status legend">
+        <ul className={compact ? 'grid grid-cols-2 gap-2' : 'space-y-3'} aria-label="Task status legend">
           {chartData.map((item) => {
             const percentage = totalTasks ? Math.round((item.count / totalTasks) * 100) : 0;
 
             return (
               <li
                 key={item.status}
-                className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2"
+                className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2 transition-colors hover:bg-muted/35"
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={`h-2.5 w-2.5 rounded-full ${STATUS_META[item.status].dotClass}`}
                     aria-hidden="true"
                   />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className="text-xs font-medium sm:text-sm">{item.name}</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold">{item.count}</p>
+                  <p className="text-xs font-medium sm:text-sm">{item.count}</p>
                   <p className="text-xs text-muted-foreground">{percentage}%</p>
                 </div>
               </li>
