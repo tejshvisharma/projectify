@@ -5,6 +5,7 @@
 Current state: partially production-ready, but not deploy-safe yet.
 
 Major risks are concentrated in four areas:
+
 - Frontend release is currently blocked by TypeScript build failures.
 - Security hardening is incomplete for cookie-based auth workloads (CSRF, security headers, rate limiting).
 - API contract consistency is drifting between backend responses and frontend typing/parsing.
