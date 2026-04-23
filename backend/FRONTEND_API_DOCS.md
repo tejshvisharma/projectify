@@ -12,6 +12,7 @@ Production: [Your production URL]/api/v1
 - [Authentication](#authentication)
 - [Projects](#projects)
 - [Project Dashboard](#project-dashboard)
+- [User Dashboard](#user-dashboard)
 - [Project Members](#project-members)
 - [Users](#users)
 - [Invites](#invites)
@@ -624,6 +625,152 @@ export const getProjectDashboardSummary = (projectId: string) =>
     .get<
       ApiResponse<DashboardSummaryData>
     >(`/projects/${projectId}/dashboard/summary`)
+    .then((res) => res.data.data);
+```
+
+---
+
+## User Dashboard
+
+### Get My Dashboard (Aggregated)
+
+```http
+GET /dashboard/me
+Authorization: Bearer <accessToken>
+```
+
+**Required Role:** Authenticated user
+
+**Response (200):**
+
+```json
+{
+  "statuscode": 200,
+  "success": true,
+  "message": "User dashboard fetched successfully",
+  "data": {
+    "tasks": {
+      "assigned": [],
+      "inProgress": [],
+      "submitted": [],
+      "upcoming": [],
+      "overdue": [],
+      "recent": [],
+      "completed": []
+    },
+    "mentions": [],
+    "stats": {
+      "totalAssigned": 0,
+      "totalCompleted": 0,
+      "totalPending": 0,
+      "totalOverdue": 0
+    },
+    "activity": [],
+    "suggestions": ["No urgent items right now. Keep your momentum going."]
+  }
+}
+```
+
+**Frontend Notes:**
+
+- `tasks.upcoming` contains non-done tasks due in the next 5 days, sorted by nearest due date.
+- `tasks.overdue` contains non-done tasks with dueDate before now.
+- `tasks.recent` returns the latest 10 assignments for the current user.
+- `tasks.completed` returns the latest 10 completed tasks.
+- `activity` is already merged and sorted latest-first, max 10 items.
+- `mentions` is aggregated across all projects the user is still a member of.
+
+### TypeScript Interfaces (Frontend Ready)
+
+```ts
+type Avatar = {
+  url?: string;
+  public_id?: string;
+  localPath?: string;
+};
+
+type DashboardTaskStatus = "todo" | "in_progress" | "submitted" | "done";
+
+type DashboardTaskItem = {
+  _id: string;
+  title: string;
+  status: DashboardTaskStatus;
+  priority: "low" | "medium" | "high" | "critical";
+  difficulty: "easy" | "medium" | "hard" | "expert";
+  credits: number;
+  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  project: {
+    _id: string;
+    name: string;
+  };
+};
+
+type UserDashboardNoteMention = {
+  _id: string;
+  content: string;
+  createdAt: string;
+  project: {
+    _id: string;
+    name: string;
+  };
+  creator: {
+    _id: string;
+    username: string;
+    avatar: Avatar;
+  };
+};
+
+type UserDashboardActivity = {
+  type: "task_submitted" | "task_approved" | "task_rejected" | "task_assigned";
+  taskId: string;
+  taskTitle: string;
+  project: {
+    _id: string;
+    name: string;
+  };
+  timestamp: string;
+  reason?: string;
+};
+
+type UserDashboardData = {
+  tasks: {
+    assigned: DashboardTaskItem[];
+    inProgress: DashboardTaskItem[];
+    submitted: DashboardTaskItem[];
+    upcoming: DashboardTaskItem[];
+    overdue: DashboardTaskItem[];
+    recent: DashboardTaskItem[];
+    completed: DashboardTaskItem[];
+  };
+  mentions: UserDashboardNoteMention[];
+  stats: {
+    totalAssigned: number;
+    totalCompleted: number;
+    totalPending: number;
+    totalOverdue: number;
+  };
+  activity: UserDashboardActivity[];
+  suggestions: string[];
+};
+
+type ApiResponse<T> = {
+  statuscode: number;
+  success: boolean;
+  message: string;
+  data: T;
+};
+```
+
+### TypeScript API Helper (Axios)
+
+```ts
+import axios from "axios";
+
+export const getMyDashboard = () =>
+  axios
+    .get<ApiResponse<UserDashboardData>>("/dashboard/me")
     .then((res) => res.data.data);
 ```
 

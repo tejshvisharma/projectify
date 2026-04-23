@@ -54,7 +54,7 @@ import projectInviteRouter from "./routes/projectInvite.routes.js";
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectRouter);
-app.use("/api/v1/projects", dashboardRouter);
+app.use("/api/v1", dashboardRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/subtasks", SubTaskRouter);
 app.use("/api/v1/leaderboard", leaderboardRouter);

@@ -4,12 +4,19 @@ import {
   validateProjectPermission,
 } from "../middlewares/auth.middleware.js";
 import { PROJECT_ROLES } from "../utils/constants.js";
-import { getDashboardSummary } from "../controllers/dashboard.controller.js";
+import {
+  getDashboardSummary,
+  getUserDashboard,
+} from "../controllers/dashboard.controller.js";
 
 const router = Router();
 
 router
-  .route("/:projectId/dashboard/summary")
+  .route("/dashboard/me")
+  .get(isLoggedIn, getUserDashboard);
+
+router
+  .route("/projects/:projectId/dashboard/summary")
   .get(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.VIEWERS),

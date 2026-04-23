@@ -103,6 +103,8 @@ const taskSchema = new Schema(
 // Indexes for frequently queried fields
 taskSchema.index({ project: 1, createdAt: -1 });
 taskSchema.index({ assignedTo: 1, status: 1 });
+taskSchema.index({ assignedTo: 1, createdAt: -1 });
+taskSchema.index({ assignedTo: 1, dueDate: 1, status: 1 });
 taskSchema.index({ project: 1, status: 1 });
 
 taskSchema.pre(

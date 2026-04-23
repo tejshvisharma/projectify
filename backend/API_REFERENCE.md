@@ -29,6 +29,18 @@ All authentication endpoints remain unchanged:
 
 - `GET /api/v1/projects/:projectId/dashboard/summary` - Get dashboard summary (requires VIEWER role)
 
+### User Dashboard
+
+- `GET /api/v1/dashboard/me` - Get authenticated user dashboard aggregate (requires auth)
+
+User dashboard response data includes:
+
+- `tasks` - `assigned`, `inProgress`, `submitted`, `upcoming`, `overdue`, `recent`, `completed`
+- `mentions` - notes where current user is mentioned (across all authorized projects)
+- `stats` - `totalAssigned`, `totalCompleted`, `totalPending`, `totalOverdue`
+- `activity` - latest user-relevant task activity (`task_submitted`, `task_approved`, `task_rejected`, `task_assigned`)
+- `suggestions` - simple actionable summary strings
+
 Dashboard response data includes:
 
 - `kpi` - `totalTasks`, `completedTasks`, `completionRate`, `overdueTasks`, `totalCreditsEarned`
