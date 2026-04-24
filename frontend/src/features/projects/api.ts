@@ -302,7 +302,7 @@ export function useUpdateTaskMutation(projectId: string) {
         },
 
         // ── Rollback on failure ──────────────────────────────────────────────────
-        onError: (error, variables, context) => {
+        onError: (error, _variables, context) => {
             // Server rejected — restore previous state
             if (context?.previousTasks) {
                 queryClient.setQueryData(
@@ -418,7 +418,7 @@ export function useUpdateSubTaskMutation(projectId: string, taskId: string) {
             return { previousSubTasks };
         },
 
-        onError: (error, variables, context) => {
+        onError: (_error, _variables, context) => {
             if (context?.previousSubTasks) {
                 queryClient.setQueryData(
                     projectKeys.subtasks(projectId, taskId),

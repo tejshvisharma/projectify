@@ -74,7 +74,7 @@ export function useCreateCommentMutation(projectId: string, taskId: string) {
             return { previousComments };
         },
 
-        onError: (error, variables, context) => {
+        onError: (_error, _variables, context) => {
             if (context?.previousComments) {
                 queryClient.setQueryData(
                     commentKeys.list(projectId, taskId),

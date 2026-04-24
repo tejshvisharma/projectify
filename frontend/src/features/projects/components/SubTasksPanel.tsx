@@ -57,9 +57,10 @@ export default function SubTasksPanel({ projectId, taskId }: SubTasksPanelProps)
     }
   };
 
-  const handleToggle = (subTaskId: string, currentValue: boolean) => {
+  const handleToggle = (subTaskId: string, currentValue: boolean, title: string) => {
     updateSubTask.mutate({
       subTaskId,
+      title,
       isCompleted: !currentValue, // flip the boolean
     });
   };
@@ -113,7 +114,7 @@ export default function SubTasksPanel({ projectId, taskId }: SubTasksPanelProps)
             >
               {/* Toggle checkbox button */}
               <button
-                onClick={() => handleToggle(subtask._id, subtask.isCompleted)}
+                onClick={() => handleToggle(subtask._id, subtask.isCompleted, subtask.title)}
                 disabled={updateSubTask.isPending}
                 aria-label={subtask.isCompleted ? 'Mark incomplete' : 'Mark complete'}
                 className="shrink-0 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
