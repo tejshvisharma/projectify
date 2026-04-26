@@ -94,6 +94,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="john@example.com"
                 value={email}
+                autoComplete="email"
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loginMutation.isPending}
@@ -106,6 +107,7 @@ export default function LoginPage() {
                 type="password"
                 placeholder="••••••••"
                 value={password}
+                autoComplete="current-password"
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loginMutation.isPending}

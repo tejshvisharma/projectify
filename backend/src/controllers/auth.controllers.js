@@ -58,7 +58,7 @@ const registerUser = asyncHandler(async (req, res) => {
     emailVerificationUrl,
   );
 
-  sendEmail({
+  await sendEmail({
     subject: "To verify Email",
     to: user.email,
     mailGenContent: mailContent,
@@ -77,7 +77,9 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
-  if (!user) throw new ApiError(401, "Invalid credentials");
+  if (!user) {
+    throw new ApiError(401, "Invalid email or password");
+  }
 
   if (!user.isEmailVerified) {
     throw new ApiError(403, "Please verify your email first to login", {
@@ -86,26 +88,38 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const isMatch = await user.isPasswordCorrect(password);
-  if (!isMatch) throw new ApiError(401, "Invalid email or password");
+
+  if (!isMatch) {
+    throw new ApiError(401, "Invalid email or password");
+  }
 
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
-  user.refreshToken = refreshToken;
+  // 🔐 Hash refresh token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
+
+  user.refreshToken = hashedToken;
+  user.lastLogin = new Date();
 
   await user.save({ validateBeforeSave: false });
 
+  const isProd = process.env.NODE_ENV === "production";
+
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 1000 * 60 * 15,
   };
 
   res.cookie("accessToken", accessToken, cookieOptions);
   res.cookie("refreshToken", refreshToken, {
     ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   return res.status(200).json(
@@ -113,9 +127,15 @@ const loginUser = asyncHandler(async (req, res) => {
       200,
       {
         user: {
-          id: user._id,
+          _id: user._id,
           username: user.username,
-          isEmailVerified: true,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          avatar: user.avatar,
+          isEmailVerified: user.isEmailVerified,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
         },
       },
       "Login successful",
@@ -327,16 +347,22 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid or expired refresh token");
   }
 
-  // Use _id from decoded token, not email
+  // Get user from decoded token
   const user = await User.findById(decoded._id);
 
   if (!user) {
     throw new ApiError(401, "User not found");
   }
 
-  // Verify the refresh token matches what's stored (reuse detection)
-  if (incomingRefreshToken !== user.refreshToken) {
-    // Possible token reuse attack - invalidate stored token
+  // 🔐 HASH incoming refresh token
+  const hashedIncomingToken = crypto
+    .createHash("sha256")
+    .update(incomingRefreshToken)
+    .digest("hex");
+
+  // 🔐 Compare hashed token with stored hash
+  if (hashedIncomingToken !== user.refreshToken) {
+    // Possible token reuse attack → invalidate stored token
     user.refreshToken = undefined;
     await user.save({ validateBeforeSave: false });
     throw new ApiError(
@@ -345,22 +371,30 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     );
   }
 
-  // Generate new tokens (token rotation)
+  // 🔁 Generate new tokens (rotation)
   const accessToken = user.generateAccessToken();
   const newRefreshToken = user.generateRefreshToken();
 
-  // Store new refresh token
-  user.refreshToken = newRefreshToken;
+  // 🔐 HASH new refresh token before storing
+  const hashedNewRefreshToken = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
+
+  user.refreshToken = hashedNewRefreshToken;
   await user.save({ validateBeforeSave: false });
+
+  const isProd = process.env.NODE_ENV === "production";
 
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProd,
+    sameSite: isProd ? "none" : "strict",
     maxAge: 15 * 60 * 1000, // 15 minutes
   };
 
   res.cookie("accessToken", accessToken, cookieOptions);
+
   res.cookie("refreshToken", newRefreshToken, {
     ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -377,7 +411,11 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new ApiError(401, "user not found");
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, null, "Reset password email sent successfully"),
+        );
   }
 
   const { hashedToken, unHashedToken, tokenExpiry } =

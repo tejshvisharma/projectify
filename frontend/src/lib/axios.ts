@@ -55,16 +55,20 @@ apiClient.interceptors.response.use(
         }
 
         const isAuthRoute =
-            originalRequest.url?.includes('/auth/login') ||
-            originalRequest.url?.includes('/auth/register');
+            originalRequest.url?.includes("/auth/login") ||
+            originalRequest.url?.includes("/auth/register") ||
+            originalRequest.url?.includes("/auth/forgot-password") ||
+            originalRequest.url?.includes("/auth/reset-password");
 
         if (isAuthRoute) {
             return Promise.reject(error);
         }
 
         // Prevent retrying refresh endpoint itself
-        if (originalRequest.url?.includes('/auth/refresh-token')) {
-            useAuthStore.getState().clearUser();
+        if (originalRequest.url?.includes("/auth/refresh-token")) {
+            if (useAuthStore.getState().isAuthenticated) {
+                useAuthStore.getState().clearUser();
+            }
             return Promise.reject(error);
         }
 

@@ -15,15 +15,15 @@ const userSchema = new Schema(
     avatar: {
       url: {
         type: String,
-        default: '',
+        default: "",
       },
       public_id: {
         type: String,
-        default: '',
+        default: "",
       },
       localPath: {
         type: String,
-        default: '',
+        default: "",
       },
     },
     username: {
@@ -51,6 +51,10 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: [true, "password is required"],
+    },
+    lastLogin: {
+      type: Date,
+      default: null,
     },
     role: {
       type: String,
