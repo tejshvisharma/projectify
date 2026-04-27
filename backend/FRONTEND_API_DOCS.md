@@ -28,6 +28,60 @@ Production: [Your production URL]/api/v1
 
 ## Authentication
 
+### CSRF Protection (Required for all state-changing requests)
+
+- All POST, PATCH, DELETE, and other protected endpoints require a valid CSRF token.
+- The CSRF token is issued via:
+
+  ```http
+  GET /auth/csrf-token
+  ```
+
+  **Response:**
+
+  ```json
+  {
+    "success": true,
+    "data": { "csrfToken": "abc123..." },
+    "message": "CSRF token fetched successfully"
+  }
+  ```
+
+- The response will also set a `csrf-token` cookie.
+- For all protected requests, you **must**:
+  - Include the `csrf-token` cookie (sent automatically if using `withCredentials: true` in axios/fetch)
+  - Set the `x-csrf-token` header to the value from the latest `/auth/csrf-token` response
+
+**Example protected request:**
+
+```http
+POST /projects
+Cookie: csrf-token=abc123...; accessToken=...
+Headers:
+  x-csrf-token: abc123...
+  Content-Type: application/json
+
+{ ...body... }
+```
+
+If the CSRF token is missing or mismatched, the API will return:
+
+```json
+{
+  "success": false,
+  "message": "Invalid CSRF token",
+  "errors": null
+}
+```
+
+**Frontend best practices:**
+
+- Always fetch `/auth/csrf-token` after login and on app load if authenticated.
+- Store the token in memory (not localStorage).
+- Attach the `x-csrf-token` header for all protected API calls.
+
+---
+
 All authenticated endpoints require either:
 
 - **Cookie**: `accessToken` (automatically sent by browser)

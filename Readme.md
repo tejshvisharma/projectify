@@ -86,7 +86,40 @@ Projectify is a comprehensive, full-stack project management platform designed t
 - **File Storage:** Cloudinary
 - **Email:** Nodemailer
 - **Validation:** Express Validator + Custom Validators
-- **Security:** Cookie-based token storage, CORS, Rate limiting
+- **Security:** Cookie-based token storage, CORS, Rate limiting, CSRF protection (double submit cookie pattern via csrf-csrf), HTTP security headers (Helmet)
+
+---
+
+## 🛡️ CSRF Protection
+
+This app uses the **double submit cookie pattern** for CSRF protection on all state-changing endpoints (POST, PATCH, DELETE, etc.).
+
+**How it works:**
+
+- When a user logs in or loads the app, the frontend must fetch a CSRF token:
+  - `GET /api/v1/auth/csrf-token`
+  - The response will set a `csrf-token` cookie and return `{ csrfToken: "..." }` in the body.
+- For all protected requests (POST, PATCH, DELETE), the frontend must:
+  - Read the latest CSRF token value
+  - Send it in the `x-csrf-token` header
+  - Ensure the `csrf-token` cookie is present (sent automatically if `withCredentials: true`)
+- The backend will reject requests with a 403 if the header and cookie do not match.
+
+**Frontend integration tips:**
+
+- Always call `/auth/csrf-token` after login and on app load if authenticated.
+- Store the token in memory (not localStorage).
+- Attach the `x-csrf-token` header for all protected API calls.
+
+**Testing:**
+
+- In Postman, fetch `/auth/csrf-token`, copy the token, and include both the cookie and header in protected requests.
+
+**Why:**
+
+- This prevents cross-site request forgery attacks while supporting modern SPA flows and secure cookies.
+
+---
 
 ### Frontend (Recommended)
 
