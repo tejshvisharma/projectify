@@ -16,6 +16,7 @@ import {
   paginateSubTasksValidator,
 } from "../validators/subtask.validators.js";
 import { PROJECT_ROLES } from "../utils/constants.js";
+import { doubleCsrfProtection } from "../utils/csrf.js";
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router
   .post(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.EDITORS),
+    doubleCsrfProtection,
     createSubTaskValidator(),
     validate,
     createSubTask,
@@ -41,6 +43,7 @@ router
   .patch(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.EDITORS),
+    doubleCsrfProtection,
     updateSubTaskValidator(),
     validate,
     updateSubTask,
@@ -48,6 +51,7 @@ router
   .delete(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.EDITORS),
+    doubleCsrfProtection,
     deleteSubTask,
   );
 

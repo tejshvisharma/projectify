@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, authHydrationClient } from '@/lib/axios';
+import { apiClient, authHydrationClient, setCSRFToken } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { LoginPayload, RegisterPayload, UserProfile } from "./types";
 // Types
 interface ApiResponse<T> {
-    statusCode: number;
+    success: boolean;
     data: T;
     message: string;
 }
@@ -15,6 +15,8 @@ type RegisterResponse = ApiResponse<null>;
 interface UserResponseEnvelope {
     user: UserProfile;
 }
+
+type csrfTokenResponse = ApiResponse<{ csrfToken: string }>;
 
 const extractUser = (data: UserProfile | UserResponseEnvelope): UserProfile => {
     if (typeof data === 'object' && data !== null && 'user' in data) {
@@ -29,6 +31,18 @@ const login = async (credentials: LoginPayload): Promise<AuthResponse> => {
     return response.data;
 };
 
+export const getCSRFToken = async () => {
+    try {
+        const res = await authHydrationClient.get<csrfTokenResponse>('/auth/csrf-token');
+        const token = res.data.data.csrfToken;
+
+        setCSRFToken(token ?? null);
+        return token ?? null;
+    } catch (error) {
+        setCSRFToken(null);
+        return null;
+    }
+}
 const register = async (data: RegisterPayload): Promise<RegisterResponse> => {
     const response = await apiClient.post<RegisterResponse>('/auth/register', data);
     return response.data;
@@ -45,8 +59,9 @@ export const useLoginMutation = () => {
 
     return useMutation({
         mutationFn: login,
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
             setUser(data.data.user);
+            await getCSRFToken();
         },
     });
 };

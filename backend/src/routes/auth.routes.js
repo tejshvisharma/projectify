@@ -13,6 +13,7 @@ import {
   changeCurrentPassword,
   updateProfile,
   updateAvatar,
+  getCSRFToken,
 } from "../controllers/auth.controllers.js";
 
 import {
@@ -30,6 +31,8 @@ import { uploadAvatar } from "../middlewares/upload.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
+
+import { doubleCsrfProtection } from "../utils/csrf.js";
 const router = Router();
 
 router.route("/register")
@@ -52,7 +55,13 @@ router.route("/profile").get( isLoggedIn, getCurrentUser);
 
 router
   .route("/change-password")
-  .post(userChangeCurrentPasswordValidator(), validate, isLoggedIn, changeCurrentPassword); 
+  .post(
+    isLoggedIn,
+    doubleCsrfProtection,
+    userChangeCurrentPasswordValidator(),
+    validate,
+    changeCurrentPassword,
+  ); 
 
 router
   .route("/forgot-password")
@@ -68,6 +77,7 @@ router.route("/refresh-token").post(refreshAccessToken);
 router.patch(
   "/update-profile",
   isLoggedIn,
+  doubleCsrfProtection,
   updateProfileValidator(),
   validate,
   updateProfile,
@@ -76,8 +86,12 @@ router.patch(
 router.patch(
   "/update-avatar",
   isLoggedIn,
+  doubleCsrfProtection,
   uploadAvatar.single("avatar"),
   updateAvatar,
 );
+
+router.get("/csrf-token", getCSRFToken);
+
   export default router
 

@@ -26,6 +26,18 @@ import cloudinary from "../config/cloudinary.js";
 
 dotenv.config();
 
+import { generateCsrfToken } from "../utils/csrf.js";
+
+export const getCSRFToken = (req, res) => {
+  const token = generateCsrfToken(req, res);
+
+  return res.status(200).json({
+    success: true,
+    data: { csrfToken: token },
+    message: "CSRF token fetched successfully",
+  });
+};
+
 const registerUser = asyncHandler(async (req, res) => {
   const { email, username, password, fullName } = req.body;
 

@@ -1,6 +1,14 @@
 const errorHandler = (err, req, res, next) => {
-  const statuscode = err.statuscode || 500;
-  const message = err.message || "Something went wrong";
+  const isCsrfError =
+    err?.code === "EBADCSRFTOKEN" ||
+    (typeof err?.message === "string" &&
+      err.message.toLowerCase() === "invalid csrf token");
+
+  const statuscode =
+    err.statuscode || err.statusCode || (isCsrfError ? 403 : 500);
+  const message = isCsrfError
+    ? "Invalid CSRF token"
+    : err.message || "Something went wrong";
   const errors = err.errors || null;
 
   const response = {

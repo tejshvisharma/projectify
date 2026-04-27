@@ -71,13 +71,20 @@ import {
   inviteOrAddProjectMember,
 } from "../controllers/projectInvite.controller.js";
 
+import { doubleCsrfProtection } from "../utils/csrf.js";
 const router = Router();
 
 // for projects routing :
 
 router
   .route("/")
-  .post(isLoggedIn, createProjectValidator(), validate, createProject)
+  .post(
+    isLoggedIn,
+    doubleCsrfProtection,
+    createProjectValidator(),
+    validate,
+    createProject,
+  )
   .get(isLoggedIn, getProjects);
 
 router
@@ -85,11 +92,13 @@ router
   .get(isLoggedIn, getProjectById)
   .patch(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     updateProject,
   )
   .delete(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission([userRolesEnum.OWNER]),
     deleteProject,
   );
@@ -104,6 +113,7 @@ router
   )
   .post(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     addMemberToProjectValidator(),
     validate,
@@ -114,6 +124,7 @@ router
   .route("/:projectId/members/:memberId")
   .patch(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     updateProjectMemberRoleValidator,
     validate,
@@ -121,6 +132,7 @@ router
   )
   .delete(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     deleteProjectMember,
   );
@@ -129,6 +141,7 @@ router
   .route("/:projectId/members/invite")
   .post(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     inviteOrAddProjectMemberValidator(),
     validate,
@@ -139,6 +152,7 @@ router
   .route("/:projectId/invites/:inviteId")
   .delete(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     deleteProjectInviteValidator(),
     validate,
@@ -151,6 +165,7 @@ router
   .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getTasks)
   .post(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     uploadTaskAttachments.array("attachments", 5),
     createTaskValidator(),
@@ -162,6 +177,7 @@ router
   .route("/:projectId/tasks/:taskId")
   .patch(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     uploadTaskAttachments.array("attachments", 5),
     updateTaskValidator(),
@@ -170,12 +186,14 @@ router
   )
   .delete(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     deleteTask,
   );
 
 router.route("/:projectId/tasks/:taskId/submit").patch(
   isLoggedIn,
+  doubleCsrfProtection,
   validateProjectPermission(PROJECT_ROLES.EDITORS), // ensures user is a member at all
   uploadTaskAttachments.array("attachments", 5),
   submitTask,
@@ -185,8 +203,10 @@ router
   .route("/:projectId/tasks/:taskId/verify")
   .patch(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     verifyTaskValidator(),
+    validate,
     verifyTask,
   );
 
@@ -205,6 +225,7 @@ router
   .get(isLoggedIn, validateProjectPermission(PROJECT_ROLES.VIEWERS), getNotes)
   .post(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     createNoteValidator(),
     validate,
@@ -220,6 +241,7 @@ router
   )
   .patch(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     updateNoteValidator(),
     validate,
@@ -227,6 +249,7 @@ router
   )
   .delete(
     isLoggedIn,
+    doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
     validate,
     deleteNote,

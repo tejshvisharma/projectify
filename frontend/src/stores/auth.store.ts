@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { AxiosError } from 'axios';
-import { apiClient, authHydrationClient } from '@/lib/axios';
+
+import { apiClient } from '@/lib/axios';
 
 export interface UserProfile {
     _id: string;

@@ -1,17 +1,21 @@
 import express from "express";
 import errorHandler from "./middlewares/error.middleware.js";
+import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import devLogger from "./middlewares/devLogger.middleware.js";
 
 const app = express();
-// all middlewares :
+
+// Security headers (helmet) - must be before routes, after express init
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable CSP to avoid breaking React/Vite
+  }),
+);
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cookieParser());
-
 app.use(devLogger);
 
 const allowedOrigins = [
@@ -34,7 +38,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "x-csrf-token"],
     exposedHeaders: ["Set-Cookie"],
   }),
 );

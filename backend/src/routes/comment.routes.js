@@ -15,7 +15,7 @@ import {
   updateCommentValidator,
 } from "../validators/comment.validators.js";
 import { PROJECT_ROLES } from "../utils/constants.js";
-
+import {doubleCsrfProtection} from "../utils/csrf.js";
 const router = Router();
 
 // Comments are scoped to tasks, which are scoped to projects
@@ -27,6 +27,7 @@ router
     validateProjectPermission(PROJECT_ROLES.VIEWERS),
     createCommentValidator(),
     validate,
+    doubleCsrfProtection,
     createComment,
   )
   .get(
@@ -42,11 +43,13 @@ router
     validateProjectPermission(PROJECT_ROLES.VIEWERS),
     updateCommentValidator(),
     validate,
+    doubleCsrfProtection,
     updateComment,
   )
   .delete(
     isLoggedIn,
     validateProjectPermission(PROJECT_ROLES.VIEWERS),
+    doubleCsrfProtection,
     deleteComment,
   );
 
