@@ -23,7 +23,7 @@ const taskStorage = new CloudinaryStorage({
   params: async (_req, file) => {
     const base = file.originalname.replace(/\.[^/.]+$/, "");
     return {
-      folder: "projectify/tasks",
+      folder: "karyadesk/tasks",
       resource_type: "auto",
       public_id: `${Date.now()}-${base}`,
     };
@@ -37,7 +37,7 @@ const avatarStorage = new CloudinaryStorage({
   params: async (_req, file) => {
     const base = file.originalname.replace(/\.[^/.]+$/, "");
     return {
-      folder: "projectify/avatars", 
+      folder: "karyadesk/avatars", 
       resource_type: "image", 
       public_id: `avatar-${Date.now()}-${base}`,
       transformation: [

@@ -1,4 +1,4 @@
-# Frontend Migration Guide - Projectify Backend Security Update
+# Frontend Migration Guide - KaryaDesk Backend Security Update
 
 ## Overview
 

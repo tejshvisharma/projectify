@@ -274,3 +274,285 @@ Major risks are concentrated in four areas:
 - **Why it matters:** Recovery is slower and error-prone during real incidents.
 - **Fix:** Add concise runbooks for detection, mitigation, rollback, and verification per critical subsystem.
 - **Priority:** 🟢 Nice-to-have
+
+
+
+----------------------------------------------------------------------------
+🚀 3-DAY EXECUTION PLAN (PRODUCTION READY)
+🗓️ DAY 1 — 🔴 CRITICAL FOUNDATION (BLOCKERS)
+
+Goal: App must build, run, and be secure enough to not break instantly in production
+
+🔥 1. Fix Frontend Build (START HERE)
+
+Tasks:
+
+Fix TypeScript errors
+Fix icon imports
+Fix mutation typings
+Ensure npm run build passes
+
+👉 Without this → nothing else matters
+
+🔐 2. Fix Auth Contract + Flow (VERY CRITICAL)
+
+Tasks:
+
+Standardize API response:
+
+{ statusCode, data: { user }, message }
+
+Fix all frontend parsing:
+
+response.data.data.user
+Fix Zustand setUser + hydration
+Fix login/profile mismatch
+🔁 3. Fix Axios Interceptor (YOUR BUG AREA)
+
+Tasks:
+
+Skip interceptor for:
+/auth/login
+/auth/register
+Use authHydrationClient for refresh
+Remove hard reload redirect
+Ensure _retry works properly
+🔐 4. Security Baseline (MUST BEFORE DEPLOY)
+
+Tasks:
+
+Add:
+security headers (helmet or equivalent)
+body size limits
+Add rate limiting:
+login
+refresh
+forgot password
+🛡️ 5. CSRF Protection
+
+Tasks:
+
+Add CSRF token for:
+POST
+PATCH
+DELETE
+Handle token in frontend
+🍪 6. Cookie Hardening
+
+Tasks:
+
+Make cookie config env-based:
+secure
+sameSite
+domain
+Test:
+localhost
+production domain
+🔑 7. Refresh Token Security
+
+Tasks:
+
+Hash refresh tokens in DB
+Compare hashed tokens
+Rotate tokens on refresh
+⚙️ 8. Backend Critical Fixes
+
+Tasks:
+
+Fix role validator wiring
+Fix inconsistent API response fields (statuscode vs statusCode)
+🧪 9. Backend Auth Tests (MINIMUM)
+
+Tasks:
+
+Test:
+login success/failure
+refresh flow
+logout
+
+✅ End of Day 1 Result:
+
+App builds
+Auth works reliably
+No major security holes
+🗓️ DAY 2 — 🟡 STABILITY + RELIABILITY
+
+Goal: Make app stable under real usage
+
+⚙️ 10. Environment & Config Setup
+
+Tasks:
+
+Validate ALL env variables
+Create .env.example
+Add runtime validation
+📦 11. Production Start Setup
+
+Tasks:
+
+Replace nodemon
+
+Add:
+
+npm start → node server.js
+Define Node version
+📊 12. Logging System
+
+Tasks:
+
+Replace console logs with structured logs:
+requestId
+route
+status
+latency
+❤️ 13. Health Check Upgrade
+
+Tasks:
+
+Add checks for:
+DB connection
+mail service
+Return structured health response
+📩 14. Fix Email Flows
+
+Tasks:
+
+Make register flow await email
+Complete invite email implementation
+🔐 15. Remove User Enumeration
+
+Tasks:
+
+Standardize forgot password response:
+
+"If account exists, email sent"
+🎯 16. Frontend UX Fixes
+
+Tasks:
+
+Centralize API error handling
+Improve auth error messages
+Fix resend flow URL handling
+⚡ 17. Performance Fixes
+
+Tasks:
+
+Add compression
+Optimize heavy queries:
+dashboard
+tasks
+Add pagination defaults
+🔁 18. React Query Optimization
+
+Tasks:
+
+Reduce broad invalidations
+Use targeted cache updates
+🧪 19. E2E Tests (IMPORTANT)
+
+Test flows:
+
+login failure
+token refresh success
+refresh failure logout
+protected route redirect
+🚦 20. CI Pipeline (MANDATORY)
+
+Tasks:
+
+Add checks:
+typecheck
+lint
+tests
+Block merge if failing
+
+✅ End of Day 2 Result:
+
+Stable system
+Reliable auth
+Safe deployments possible
+🗓️ DAY 3 — 🟢 POLISH + PRODUCTION HARDENING
+
+Goal: Make it production-grade SaaS
+
+📊 21. Monitoring & Alerts
+
+Tasks:
+
+Track:
+auth failures
+refresh spikes
+API latency
+Add alert thresholds
+🔄 22. Graceful Shutdown
+
+Tasks:
+
+Handle:
+SIGTERM
+SIGINT
+Close:
+server
+DB connections
+📦 23. Caching Strategy
+
+Tasks:
+
+Add cache headers for:
+static assets
+safe GET endpoints
+🧹 24. Code Cleanup
+
+Tasks:
+
+Remove unused imports
+Remove dead code
+Fix incomplete paths
+🧠 25. Shared API Types
+
+Tasks:
+
+Create single ApiResponse<T>
+Reuse everywhere
+📘 26. Runbooks (VERY UNDERRATED)
+
+Write docs for:
+
+auth failure
+DB outage
+email failure
+⚙️ 27. Background Jobs (Optional but strong)
+
+Tasks:
+
+move emails to queue
+add retry logic
+📈 28. Dashboards
+
+Track:
+
+error rate
+latency
+auth success rate
+🧪 29. Final Verification
+
+Test:
+
+ login/logout
+ refresh flow
+ dashboard load
+ email flows
+ deployment build
+🏁 FINAL OUTCOME
+
+After 3 days, your app becomes:
+
+Area	Before	After
+Auth	Buggy	Production-safe
+Security	Weak	Hardened
+Build	Broken	Stable
+API	Inconsistent	Standardized
+DevOps	Missing	Ready
+UX	Fragile	Reliable
+
+api key : sk-375447214f174ad08a5e0a4b5500dfa\7

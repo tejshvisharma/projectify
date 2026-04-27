@@ -76,7 +76,7 @@ export function AppLayout() {
         {/* Sidebar Header */}
         <div className="flex h-16 items-center justify-between border-b border-border/70 px-3">
           {isSidebarOpen && (
-            <h1 className="ml-1 text-xl font-bold tracking-tight text-primary">Projectify</h1>
+            <h1 className="ml-1 text-xl font-bold tracking-tight text-primary">KaryaDesk</h1>
           )}
 
           <Button

@@ -84,7 +84,7 @@ export default function HeroSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-8">
           <Badge variant="outline" className="landing-fade-up rounded-full border-primary/25 bg-primary/5 px-4 py-1.5 text-xs font-semibold tracking-[0.08em] text-primary">
-            Projectify for Execution and Visibility
+            KaryaDesk for Execution and Visibility
           </Badge>
 
           <h1 className="landing-fade-up landing-delay-1 mx-auto max-w-5xl font-['Sora',ui-sans-serif,system-ui] text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl leading-tight">
@@ -92,7 +92,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="landing-fade-up landing-delay-2 mx-auto max-w-3xl text-base text-muted-foreground sm:text-lg">
-            Projectify helps teams plan, execute, and measure delivery from one product workspace, so everyone sees what is moving, who is contributing, and where to improve.
+            KaryaDesk helps teams plan, execute, and measure delivery from one product workspace, so everyone sees what is moving, who is contributing, and where to improve.
           </p>
 
           <div className="landing-fade-up landing-delay-3 flex flex-wrap justify-center gap-x-8 gap-y-3">

@@ -34,7 +34,7 @@ export default function Navbar({ isDark, toggleTheme }: NavbarProps) {
               <FolderKanban className="h-4.5 w-4.5 text-primary-foreground" />
             </div>
             <span className="font-['Sora',ui-sans-serif,system-ui] text-lg font-semibold tracking-tight">
-              Projectify
+              KaryaDesk
             </span>
           </Link>
 

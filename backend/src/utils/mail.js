@@ -1,57 +1,81 @@
 import nodemailer from "nodemailer";
-import mailgen from "mailgen";
+import Mailgen from "mailgen";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// ─── Resend Setup (PRODUCTION) ─────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ─── Nodemailer Setup (DEV) ────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: process.env.MAILTRAP_SMTP_HOST,
+  port: process.env.MAILTRAP_SMTP_PORT,
+  secure: false,
+  auth: {
+    user: process.env.MAILTRAP_SMTP_USER,
+    pass: process.env.MAILTRAP_SMTP_PASS,
+  },
+});
+
+// ─── Mailgen Setup ─────────────────────────────────────────
+const mailGenerator = new Mailgen({
+  theme: "default",
+  product: {
+    name: "KaryaDesk App",
+    link: `http://localhost:${process.env.PORT}/`,
+  },
+});
+
+// ─── MAIN EMAIL FUNCTION ───────────────────────────────────
 const sendEmail = async ({ subject, to, mailGenContent }) => {
   if (!subject || !to || !mailGenContent) {
     throw new Error("Please provide subject, recipient, and mailGenContent");
   }
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAILTRAP_SMTP_HOST,
-    port: process.env.MAILTRAP_SMTP_PORT,
-    secure: false,
-    auth: {
-      user: process.env.MAILTRAP_SMTP_USER,
-      pass: process.env.MAILTRAP_SMTP_PASS,
-    },
-  });
 
-  const mailGenerator = new mailgen({
-    theme: "default",
-    product: {
-      name: "Projectify App",
-      link: `http://localhost:${process.env.PORT}/`,
-    },
-  });
-
-  // generate html + plain text
+  // Generate HTML + TEXT
   const emailHtml = mailGenerator.generate(mailGenContent);
   const emailText = mailGenerator.generatePlaintext(mailGenContent);
 
-  const mailOptions = {
-    from: `"Projectify" <${process.env.MAILTRAP_SMTP_USER}>`,
-    to: to,
-    subject: subject,
-    html: emailHtml,
-    text: emailText,
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${to}`);
+    if (isProduction) {
+      // ✅ PRODUCTION → Resend
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM, // MUST be verified domain
+        to,
+        subject,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      console.log(`✅ Email sent via Resend to ${to}`);
+    } else {
+      // ✅ DEVELOPMENT → Mailtrap
+      await transporter.sendMail({
+        from: `"KaryaDesk" <${process.env.MAILTRAP_SMTP_USER}>`,
+        to,
+        subject,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      console.log(`✅ Email sent via Mailtrap to ${to}`);
+    }
   } catch (err) {
     console.error(`❌ Email failed:`, err);
     throw err;
   }
 };
 
+// ─── EMAIL TEMPLATES ───────────────────────────
 const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
   return {
     body: {
       name: username,
       intro: [
-        "We received a request to reset your Projectify account password.",
+        "We received a request to reset your KaryaDesk account password.",
         "If you didn't make this request, you can safely ignore this email.",
       ],
       action: {
@@ -67,7 +91,6 @@ const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
         passwordResetUrl,
         "",
         "This password reset link will expire in 1 hour for security reasons.",
-        "Need help or have questions? Just reply to this email - we're always happy to help.",
       ],
     },
   };
@@ -77,14 +100,11 @@ const emailVerificationMailGenContent = (username, emailVerificationUrl) => {
   return {
     body: {
       name: username,
-      intro: [
-        "Welcome to KaryaDesk! We're thrilled to have you on board.",
-        "Our platform helps teams collaborate more effectively and manage projects with ease.",
-      ],
+      intro: ["Welcome to KaryaDesk! We're thrilled to have you on board."],
       action: {
         instructions: "To get started, please verify your email address:",
         button: {
-          color: "#6e8efb", // More appealing color
+          color: "#6e8efb",
           text: "Verify Your Email",
           link: emailVerificationUrl,
         },
@@ -92,11 +112,8 @@ const emailVerificationMailGenContent = (username, emailVerificationUrl) => {
       outro: [
         "**If the button doesn't work**, copy and paste this URL into your browser:",
         emailVerificationUrl,
-        "",
-        "Have any questions or need help? Feel free to reply to this email.",
-        "Our support team is here to help you succeed with Projectify!",
       ],
-      signature: false, // MailGen will handle this
+      signature: false,
     },
     footer: {
       name: "KaryaDesk Team",

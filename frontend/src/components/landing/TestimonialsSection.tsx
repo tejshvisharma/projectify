@@ -8,7 +8,7 @@ const TESTIMONIALS = [
     initials: 'SC',
     rating: 5,
     quote:
-      'Projectify transformed how our engineering team tracks work. The Kanban board with drag-and-drop is incredibly smooth and the role-based permissions are exactly what we needed.',
+      'KaryaDesk transformed how our engineering team tracks work. The Kanban board with drag-and-drop is incredibly smooth and the role-based permissions are exactly what we needed.',
   },
   {
     name: 'Marcus Johnson',
@@ -24,7 +24,7 @@ const TESTIMONIALS = [
     initials: 'PP',
     rating: 5,
     quote:
-      'The subtasks and progress tracking features are outstanding. We replaced three different tools with Projectify and our team productivity improved significantly.',
+      'The subtasks and progress tracking features are outstanding. We replaced three different tools with KaryaDesk and our team productivity improved significantly.',
   },
 ];
 

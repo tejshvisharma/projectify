@@ -1,6 +1,6 @@
-# Projectify Frontend
+# KaryaDesk Frontend
 
-Modern React TypeScript frontend for the Projectify Project Management System, built with Vite.
+Modern React TypeScript frontend for the KaryaDesk Project Management System, built with Vite.
 
 ## Tech Stack
 
@@ -164,4 +164,4 @@ This is Phase 1 - Foundation. Business logic and feature implementation will com
 
 ## License
 
-Private - Projectify Project Management System
+Private - KaryaDesk Project Management System

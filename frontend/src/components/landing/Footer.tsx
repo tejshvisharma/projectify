@@ -32,7 +32,7 @@ export default function Footer() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-md shadow-primary/30">
                 <FolderKanban className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-['Sora',ui-sans-serif,system-ui] text-lg font-semibold">Projectify</span>
+              <span className="font-['Sora',ui-sans-serif,system-ui] text-lg font-semibold">KaryaDesk</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
               A full-stack project management platform built with
@@ -92,7 +92,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-border/70 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            © {year} Projectify. Built as an open source project.
+            © {year} KaryaDesk. Built as an open source project.
           </p>
           <p className="text-xs text-muted-foreground">
             Full Stack · React + Node.js + MongoDB

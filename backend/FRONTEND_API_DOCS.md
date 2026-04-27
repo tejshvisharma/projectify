@@ -1,4 +1,4 @@
-# Projectify API Documentation for Frontend Team
+# KaryaDesk API Documentation for Frontend Team
 
 ## Base URL
 

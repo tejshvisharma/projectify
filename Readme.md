@@ -1,6 +1,6 @@
-# 📘 Projectify – Modern Project Management Platform
+# 📘 KaryaDesk – Modern Project Management Platform
 
-Projectify is a comprehensive, full-stack project management platform designed to help teams collaborate, track progress, and deliver projects efficiently. Built with modern web technologies, it offers real-time collaboration, role-based access control, and a seamless user experience.
+KaryaDesk is a comprehensive, full-stack project management platform designed to help teams collaborate, track progress, and deliver projects efficiently. Built with modern web technologies, it offers real-time collaboration, role-based access control, and a seamless user experience.
 
 ---
 

@@ -13,7 +13,7 @@ export default function CtaSection() {
         </h2>
 
         <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-          Join teams already using Projectify to manage their projects,
+          Join teams already using KaryaDesk to manage their projects,
           track tasks, and collaborate without the chaos.
         </p>
 

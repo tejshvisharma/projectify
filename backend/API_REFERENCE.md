@@ -1,4 +1,4 @@
-# Projectify API - Quick Reference (Post-Security Update)
+# KaryaDesk API - Quick Reference (Post-Security Update)
 
 ## Authentication Endpoints
 
