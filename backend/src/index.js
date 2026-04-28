@@ -14,6 +14,7 @@ connectDB();
 
 // Start server
 const PORT = process.env.PORT || 8000;
+const baseUrl = process.env.BASE_URL;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on ${baseUrl}:${PORT}`);
 });
