@@ -10,9 +10,19 @@ export const validateEnv = () => {
     "MONGO_URI",
     "ACCESS_TOKEN_SECRET",
     "REFRESH_TOKEN_SECRET",
-    "ACCESS_TOKEN_EXPIRY",
-    "REFRESH_TOKEN_EXPIRY",
     "PORT",
+    "NODE_ENV",
+    "FRONTEND_URL",
+    "BASE_URL",
+    "EMAIL_RESEND_COOLDOWN_MS",
+    "EMAIL_RESEND_MAX_PER_DAY",
+    "CSRF_SECRET",
+    "EMAIL_FROM",
+    "RESEND_API_KEY",
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+
   ];
 
   const missing = required.filter((key) => !process.env[key]);
