@@ -3,12 +3,8 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../config/cloudinary.js";
 import ApiError from "../utils/api-error.js";
 
-const ALLOWED_MIME = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-];
+// 🔥 Allow ALL file types for tasks (controlled via size & count)
+const ALLOWED_MIME = null; // null = allow all
 
 const ALLOWED_AVATAR_MIME = [
   "image/jpeg",
@@ -21,28 +17,35 @@ const ALLOWED_AVATAR_MIME = [
 const taskStorage = new CloudinaryStorage({
   cloudinary,
   params: async (_req, file) => {
-    const base = file.originalname.replace(/\.[^/.]+$/, "");
+    const base = file.originalname; //  DO NOT REMOVE EXTENSION
+
+    let resourceType = "raw";
+
+    if (file.mimetype.startsWith("image/")) {
+      resourceType = "image";
+    } else if (file.mimetype.startsWith("video/")) {
+      resourceType = "video";
+    }
+
     return {
       folder: "karyadesk/tasks",
-      resource_type: "auto",
-      public_id: `${Date.now()}-${base}`,
+      resource_type: resourceType,
+      public_id: `${Date.now()}-${base}`, // now includes .pdf
     };
   },
 });
 
 // ── Avatar storage ─────────────────────────────────────────────────────────────
-// Cloudinary returns url + public_id on req.file automatically
 const avatarStorage = new CloudinaryStorage({
   cloudinary,
   params: async (_req, file) => {
     const base = file.originalname.replace(/\.[^/.]+$/, "");
     return {
-      folder: "karyadesk/avatars", 
-      resource_type: "image", 
+      folder: "karyadesk/avatars",
+      resource_type: "image",
       public_id: `avatar-${Date.now()}-${base}`,
       transformation: [
         { width: 400, height: 400, crop: "fill", gravity: "face" },
-        
       ],
     };
   },
@@ -50,12 +53,19 @@ const avatarStorage = new CloudinaryStorage({
 
 // ── File filters ───────────────────────────────────────────────────────────────
 function taskFileFilter(_req, file, cb) {
-  if (ALLOWED_MIME.includes(file.mimetype)) return cb(null, true);
-  cb(new Error("Unsupported file type"));
+  // ✅ Allow all files OR restrict if list is defined
+  if (!ALLOWED_MIME || ALLOWED_MIME.includes(file.mimetype)) {
+    return cb(null, true);
+  }
+
+  cb(new ApiError(400, "Unsupported file type"), false);
 }
 
 function avatarFileFilter(_req, file, cb) {
-  if (ALLOWED_AVATAR_MIME.includes(file.mimetype)) return cb(null, true);
+  if (ALLOWED_AVATAR_MIME.includes(file.mimetype)) {
+    return cb(null, true);
+  }
+
   cb(
     new ApiError(400, "Only image files are allowed (jpeg/png/webp/gif)"),
     false,
@@ -73,10 +83,22 @@ export const uploadTaskAttachments = multer({
 });
 
 export const uploadAvatar = multer({
-  storage: avatarStorage, 
+  storage: avatarStorage,
   fileFilter: avatarFileFilter,
   limits: {
-    files: 1, 
+    files: 1,
     fileSize: 2 * 1024 * 1024, // 2MB
   },
 });
+
+export const uploadErrorHandler = (err, req, res, next) => {
+  if (err.code === "LIMIT_FILE_SIZE") {
+   throw new ApiError(400, "File size exceeds 10MB limit");
+  }
+
+  if (err.code === "LIMIT_FILE_COUNT") {
+    throw new ApiError(400, "Too many files uploaded (max allowed: 5 files per task)");
+  }
+
+  next(err);
+}

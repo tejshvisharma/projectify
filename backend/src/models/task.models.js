@@ -10,13 +10,47 @@ import {
 
 const attachmentSchema = new Schema(
   {
-    url: { type: String, required: true }, // secure url
-    public_id: { type: String, required: true }, // for later delete
-    resource_type: { type: String }, // image, raw, video
-    bytes: { type: Number }, // size in bytes
-    format: { type: String }, // jpg, png, pdf...
-    original_filename: { type: String }, // client filename
-    mimeType: { type: String }, // request mime type
+    url: {
+      type: String,
+      required: true,
+    },
+
+    public_id: {
+      type: String,
+      required: true,
+    },
+
+    resourceType: {
+      type: String,
+      enum: ["image", "video", "raw"],
+      default: "raw",
+    },
+
+    mimeType: {
+      type: String,
+      required: true,
+    },
+
+    format: {
+      type: String, // jpg, png, pdf, docx
+    },
+
+    extension: {
+      type: String, // pdf, zip, mp4
+    },
+
+    size: {
+      type: Number, // bytes
+    },
+
+    originalName: {
+      type: String,
+    },
+
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { _id: false },
 );

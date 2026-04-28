@@ -133,6 +133,11 @@ export function useUpdateMemberRoleMutation(projectId: string) {
                 queryKey: memberKeys.list(projectId),
             });
         },
+        onError: (err) => {
+            if (err instanceof Error) {
+                alert(err.message);
+            }
+        } 
     });
 }
 

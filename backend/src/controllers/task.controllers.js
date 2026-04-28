@@ -48,15 +48,33 @@ export const createTask = asyncHandler(async (req, res) => {
 
   // map uploaded files (multer-storage-cloudinary result)
   const attachments =
-    (req.files || []).map((f) => ({
-      url: f.path, // secure Cloudinary URL
-      public_id: f.filename, // Cloudinary public_id
-      resource_type: f.resource_type,
-      bytes: f.bytes,
-      format: f.format,
-      original_filename: f.originalname,
-      mimeType: f.mimetype,
-    })) ?? [];
+    (req.files || []).map((f) => {
+      const mimeType = f.mimetype;
+      const extension =
+        f.originalname?.split(".").pop()?.toLowerCase() || f.format;
+
+      let resourceType = "raw";
+
+      if (mimeType?.startsWith("image/")) {
+        resourceType = "image";
+      } else if (mimeType?.startsWith("video/")) {
+        resourceType = "video";
+      }
+
+      return {
+        url: f.path, // secure Cloudinary URL
+        public_id: f.filename, // Cloudinary public_id
+
+        resourceType, // ✅ normalized (instead of f.resource_type)
+        mimeType, // ✅ required
+
+        format: f.format || extension,
+        extension, // ✅ new field
+
+        size: f.bytes || f.size, 
+        originalName: f.originalname, 
+      };
+    }) ?? [];
 
   const newTask = await Task.create({
     project: projectId,
@@ -137,10 +155,10 @@ export const updateTask = asyncHandler(async (req, res) => {
   if (changes.status === "done") {
     throw new ApiError(
       403,
-      'Status done can only be set via the verify endpoint',
+      "Status done can only be set via the verify endpoint",
     );
   }
-  
+
   if (changes.status === "submitted") {
     throw new ApiError(403, "Use the /submit endpoint to submit a task");
   }
@@ -154,7 +172,7 @@ export const updateTask = asyncHandler(async (req, res) => {
       .filter((file) => removeFiles.includes(file.public_id))
       .map((file) =>
         cloudinary.uploader.destroy(file.public_id, {
-          resource_type: file.resource_type || "image",
+          resourceType: file.resourceType || "image",
         }),
       );
 
@@ -164,12 +182,30 @@ export const updateTask = asyncHandler(async (req, res) => {
 
   // ✅ Add new uploaded files (if any)
   if (req.files && req.files.length > 0) {
-    const newFiles = req.files.map((file) => ({
-      url: file.path,
-      public_id: file.filename,
-      resource_type: file.mimetype.startsWith("video") ? "video" : "image",
-      size: file.size,
-    }));
+    const newFiles = req.files.map((file) => {
+      const mimeType = file.mimetype;
+      const extension = file.originalname.split(".").pop();
+
+      let resourceType = "raw";
+
+      if (mimeType.startsWith("image/")) {
+        resourceType = "image";
+      } else if (mimeType.startsWith("video/")) {
+        resourceType = "video";
+      }
+
+      return {
+        url: file.path, // or secure_url from cloudinary
+        public_id: file.filename,
+        resourceType,
+        mimeType,
+        format: extension,
+        extension,
+        size: file.size,
+        originalName: file.originalname,
+      };
+    });
+
     task.attachments.push(...newFiles);
   }
 
@@ -218,7 +254,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
   if (task.attachments && task.attachments.length > 0) {
     const deletePromises = task.attachments.map((file) =>
       cloudinary.uploader.destroy(file.public_id, {
-        resource_type: file.resource_type || "image",
+        resourceType: file.resourceType || "image",
       }),
     );
     await Promise.all(deletePromises);

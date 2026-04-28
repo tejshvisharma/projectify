@@ -54,6 +54,7 @@ import SubTaskRouter from "./routes/subTask.routes.js";
 import leaderboardRouter from "./routes/leaderboard.routes.js";
 import userRouter from "./routes/user.routes.js";
 import projectInviteRouter from "./routes/projectInvite.routes.js";
+import { uploadErrorHandler } from "./middlewares/upload.middleware.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
@@ -65,6 +66,7 @@ app.use("/api/v1/leaderboard", leaderboardRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/invites", projectInviteRouter);
 
+app.use(uploadErrorHandler);
 app.use(errorHandler);
 
 export default app;

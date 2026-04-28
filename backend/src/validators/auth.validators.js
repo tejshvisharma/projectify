@@ -170,19 +170,19 @@ const addMemberToProjectValidator = () => {
 };
 
 const updateProjectMemberRoleValidator = () => {
-  (param("projectId")
-    .isMongoId().withMessage("Invalid projectId"),
-    param("memberId")
-    .isMongoId().withMessage("Invalid MemberId"),
+  return [
+    param("projectId").isMongoId().withMessage("Invalid projectId"),
+
+    param("memberId").isMongoId().withMessage("Invalid MemberId"),
+
     body("role")
       .notEmpty()
       .withMessage("Role is required")
       .bail()
       .isIn(availableUserRoles)
-      .withMessage("Role is invalid"));
-
-
-}
+      .withMessage("Role is invalid"),
+  ];
+};
 
 const deleteMemberToProjectValidator = () => {
 

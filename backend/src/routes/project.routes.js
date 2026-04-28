@@ -126,7 +126,7 @@ router
     isLoggedIn,
     doubleCsrfProtection,
     validateProjectPermission(PROJECT_ROLES.MANAGEMENT),
-    updateProjectMemberRoleValidator,
+    updateProjectMemberRoleValidator(),
     validate,
     updateProjectMemberRole,
   )

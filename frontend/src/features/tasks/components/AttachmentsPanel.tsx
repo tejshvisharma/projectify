@@ -18,36 +18,44 @@ interface AttachmentsPanelProps {
   projectId: string;
   taskId: string;
   attachments: TaskAttachment[];
-  canManage: boolean; // only project_admin or owner can add/remove
+  canManage: boolean;
 }
 
 // ── File size formatter ────────────────────────────────────────────────────────
-// Turns 12345 bytes into "12.1 KB"
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+function formatBytes(bytes?: number): string {
+  if (!bytes) return '';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// ── File type → icon mapper ────────────────────────────────────────────────────
-// Returns the right icon based on mimeType
-function getFileIcon(mimeType: string) {
+// ── File type → icon mapper (NEW SAFE VERSION) ─────────────────────────────────
+function getFileIcon(file: any) {
+  const mimeType = file?.mimeType || '';
+  const ext = file?.extension || file?.format || '';
+
   if (mimeType.startsWith('image/'))
     return <ImageIcon className="h-5 w-5 text-blue-500" />;
+
   if (mimeType.startsWith('video/'))
     return <Film className="h-5 w-5 text-purple-500" />;
-  if (mimeType === 'application/pdf')
+
+  if (ext === 'pdf' || mimeType === 'application/pdf')
     return <FileText className="h-5 w-5 text-red-500" />;
+
   return <File className="h-5 w-5 text-gray-500" />;
 }
 
-// ── Is this file previewable in browser? ──────────────────────────────────────
-function isPreviewable(mimeType: string): boolean {
+// ── Preview support ────────────────────────────────────────────────────────────
+function isPreviewable(file: any): boolean {
+  const mimeType = file?.mimeType || '';
+  const ext = file?.extension || file?.format || '';
+
   return (
     mimeType.startsWith('image/') ||
-    mimeType === 'application/pdf' ||
-    mimeType.startsWith('video/')
+    mimeType.startsWith('video/') ||
+    ext === 'pdf' ||
+    mimeType === 'application/pdf'
   );
 }
 
@@ -57,10 +65,9 @@ export default function AttachmentsPanel({
   attachments,
   canManage,
 }: AttachmentsPanelProps) {
-  // Hidden file input — triggered by the Add Attachment button
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const addAttachment    = useAddAttachmentMutation(projectId, taskId);
+  const addAttachment = useAddAttachmentMutation(projectId, taskId);
   const removeAttachment = useRemoveAttachmentMutation(projectId, taskId);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -69,22 +76,21 @@ export default function AttachmentsPanel({
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
 
-    // Max 5 files per API docs
     const allowed = files.slice(0, 5);
-    await addAttachment.mutateAsync(allowed);
+    try {
+      await addAttachment.mutateAsync(allowed);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Upload failed');
+    }
 
-    // Reset the input so same file can be re-uploaded if needed
     e.target.value = '';
   };
 
   const handlePreview = (url: string) => {
-    // Open in new tab — browser handles image/pdf/video natively
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleDownload = (url: string, filename: string) => {
-    // Create invisible anchor, click it, remove it
-    // This forces a download instead of opening in browser
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
@@ -114,7 +120,6 @@ export default function AttachmentsPanel({
           )}
         </h3>
 
-        {/* Add button — only for admin/owner */}
         {canManage && (
           <>
             <Button
@@ -122,10 +127,8 @@ export default function AttachmentsPanel({
               size="sm"
               className="h-7 text-xs"
               onClick={() => fileInputRef.current?.click()}
-            //disabled={addAttachment.isPending}
-              disabled={true} // ← disabled until Cloudinary is configured
-              title="File uploads coming soon"
-
+              disabled={addAttachment.isPending}
+              title="Upload attachments"
             >
               {addAttachment.isPending ? (
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -135,12 +138,11 @@ export default function AttachmentsPanel({
               {addAttachment.isPending ? 'Uploading...' : 'Add'}
             </Button>
 
-            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,video/*,application/pdf"
+              accept="*/*"
               className="hidden"
               onChange={handleFileChange}
               aria-label="Upload attachments"
@@ -149,7 +151,7 @@ export default function AttachmentsPanel({
         )}
       </div>
 
-      {/* Empty state
+      {/* Empty state */}
       {attachments.length === 0 && (
         <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-muted rounded-lg">
           <Paperclip className="h-8 w-8 text-muted-foreground/40 mb-2" />
@@ -157,86 +159,85 @@ export default function AttachmentsPanel({
             {canManage ? 'Click Add to upload files' : 'No attachments'}
           </p>
         </div>
-      )} */}
+      )}
 
-        {/* Empty state */}
-    {attachments.length === 0 && (
-    <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-muted rounded-lg">
-        <Paperclip className="h-8 w-8 text-muted-foreground/40 mb-2" />
-        <p className="text-xs text-muted-foreground">No attachments</p>
-        {canManage && (
-        <p className="text-xs text-muted-foreground/60 mt-1">
-            File uploads coming soon
-        </p>
-        )}
-    </div>
-    )}
-
-      {/* Attachment grid */}
+      {/* Attachment list */}
       {attachments.length > 0 && (
         <div className="space-y-2">
-          {attachments.map((attachment) => (
-            <div
-              key={attachment.public_id}
-              className="flex items-center gap-3 p-2.5 rounded-lg border bg-muted/30 group hover:bg-muted/60 transition-colors"
-            >
-              {/* File type icon */}
-              <div className="shrink-0">
-                {getFileIcon(attachment.mimeType)}
-              </div>
+          {attachments.map((attachment) => {
+            const fileName =
+              attachment.originalName ||
+              'file';
 
-              {/* File info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {attachment.original_filename}.{attachment.format}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatBytes(attachment.bytes)}
-                </p>
-              </div>
+            const extension =
+              attachment.extension || attachment.format || '';
 
-              {/* Action buttons — visible on hover */}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            const size =
+              attachment.size || 0;
 
-                {/* Preview — only for previewable types */}
-                {isPreviewable(attachment.mimeType) && (
+            return (
+              <div
+                key={attachment.public_id}
+                className="flex items-center gap-3 p-2.5 rounded-lg border bg-muted/30 group hover:bg-muted/60 transition-colors"
+              >
+                {/* Icon */}
+                <div className="shrink-0">
+                  {getFileIcon(attachment)}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {extension ? `${fileName}` : fileName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatBytes(size)}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+
+                  {isPreviewable(attachment) && (
+                    <button
+                      type="button"
+                      title="Preview"
+                      onClick={() => handlePreview(attachment.url)}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => handlePreview(attachment.url)}
-                    aria-label="Preview file"
+                    type="button"
+                    title="Download"
+                    onClick={() =>
+                      handleDownload(
+                        attachment.url,
+                        extension ? `${fileName}.${extension}` : fileName
+                      )
+                    }
                     className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <Download className="h-3.5 w-3.5" />
                   </button>
-                )}
 
-                {/* Download */}
-                <button
-                  onClick={() =>
-                    handleDownload(
-                      attachment.url,
-                      `${attachment.original_filename}.${attachment.format}`
-                    )
-                  }
-                  aria-label="Download file"
-                  className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </button>
-
-                {/* Remove — only for admin/owner */}
-                {canManage && (
-                  <button
-                    onClick={() => handleRemove(attachment.public_id)}
-                    aria-label="Remove attachment"
-                    disabled={removeAttachment.isPending}
-                    className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-background transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
+                  {canManage && (
+                    <button
+                      type="button"
+                      title="Remove"
+                      onClick={() => handleRemove(attachment.public_id)}
+                      disabled={removeAttachment.isPending}
+                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-background transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
