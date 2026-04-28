@@ -95,7 +95,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!user.isEmailVerified) {
     throw new ApiError(403, "Please verify your email first to login", {
-      resendEmailLink: `${process.env.API_BASE_URL}/auth/resend-verification`,
+      resendEmailLink: `${process.env.BASE_URL}/api/v1/auth/resend-verification`,
     });
   }
 

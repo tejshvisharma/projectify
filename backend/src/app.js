@@ -1,50 +1,12 @@
 import express from "express";
-import errorHandler from "./middlewares/error.middleware.js";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import errorHandler from "./middlewares/error.middleware.js";
 import devLogger from "./middlewares/devLogger.middleware.js";
+import { uploadErrorHandler } from "./middlewares/upload.middleware.js";
 
-const app = express();
-
-// Security headers (helmet) - must be before routes, after express init
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // Disable CSP to avoid breaking React/Vite
-  }),
-);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(devLogger);
-
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  process.env.BASE_URL,
-  "http://localhost:3000",
-].filter(Boolean); // Remove undefined values
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or Postman)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS blocked: ${origin} is not allowed`));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept", "x-csrf-token"],
-    exposedHeaders: ["Set-Cookie"],
-  }),
-);
-
-app.use(express.static("public"));
-// Routers import
+// Routers
 import healthCheckRouter from "./routes/healthCheck.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import projectRouter from "./routes/project.routes.js";
@@ -54,8 +16,68 @@ import SubTaskRouter from "./routes/subTask.routes.js";
 import leaderboardRouter from "./routes/leaderboard.routes.js";
 import userRouter from "./routes/user.routes.js";
 import projectInviteRouter from "./routes/projectInvite.routes.js";
-import { uploadErrorHandler } from "./middlewares/upload.middleware.js";
 
+const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+
+// ─── 1. Trust Proxy (Required for Render / any reverse proxy host) ───────────
+app.set("trust proxy", 1);
+
+// ─── 2. Security Headers ──────────────────────────────────────────────────────
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        connectSrc: [
+          "'self'",
+          process.env.FRONTEND_URL,
+          process.env.BASE_URL,
+        ].filter(Boolean),
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+
+// ─── 3. CORS ──────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  ...(!isProduction ? ["http://localhost:5173", "http://localhost:3000"] : []),
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  }),
+);
+
+// ─── 4. Body Parsers ──────────────────────────────────────────────────────────
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
+
+// ─── 5. Dev-only Middleware ───────────────────────────────────────────────────
+if (!isProduction) {
+  app.use(devLogger);
+}
+
+// ─── 6. Static Files ─────────────────────────────────────────────────────────
+app.use(express.static("public"));
+
+// ─── 7. Routes ───────────────────────────────────────────────────────────────
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectRouter);
@@ -66,6 +88,7 @@ app.use("/api/v1/leaderboard", leaderboardRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/invites", projectInviteRouter);
 
+// ─── 8. Error Handlers (always last) ─────────────────────────────────────────
 app.use(uploadErrorHandler);
 app.use(errorHandler);
 

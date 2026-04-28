@@ -56,11 +56,12 @@ export interface UserSummary {
 export interface TaskAttachment {
     url: string;
     public_id: string;
-    resource_type: string;
-    bytes: number;
-    format: string;
-    original_filename: string;
+    resourceType: "image" | "video" | "raw";
     mimeType: string;
+    format?: string;
+    extension?: string;
+    size?: number;
+    originalName?: string;
 }
 
 export interface TaskSubmission {

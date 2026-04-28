@@ -3,25 +3,25 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const TESTIMONIALS = [
   {
-    name: 'Sarah Chen',
-    role: 'Engineering Manager at TechCorp',
-    initials: 'SC',
+    name: 'Mahaojshvi Vareny Swami',
+    role: 'ML and AI Engineer',
+    initials: 'MV',
     rating: 5,
     quote:
       'KaryaDesk transformed how our engineering team tracks work. The Kanban board with drag-and-drop is incredibly smooth and the role-based permissions are exactly what we needed.',
   },
   {
-    name: 'Marcus Johnson',
-    role: 'Product Lead at StartupXYZ',
-    initials: 'MJ',
+    name: 'Rahul Gupta',
+    role: 'Data Analyst',
+    initials: 'RG',
     rating: 5,
     quote:
       'Finally a project tool that doesn\'t require a 3-day onboarding. Our team was up and running in an hour. The @mention system in notes keeps everyone aligned.',
   },
   {
-    name: 'Priya Patel',
-    role: 'Scrum Master at DevAgency',
-    initials: 'PP',
+    name: 'Yashveer Singh',
+    role: 'Software Engineer',
+    initials: 'YS',
     rating: 5,
     quote:
       'The subtasks and progress tracking features are outstanding. We replaced three different tools with KaryaDesk and our team productivity improved significantly.',
