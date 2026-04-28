@@ -10,6 +10,8 @@ export const validateEnv = () => {
     "MONGO_URI",
     "ACCESS_TOKEN_SECRET",
     "REFRESH_TOKEN_SECRET",
+    "ACCESS_TOKEN_EXPIRY",
+    "REFRESH_TOKEN_EXPIRY",
     "PORT",
     "NODE_ENV",
     "FRONTEND_URL",
@@ -22,7 +24,10 @@ export const validateEnv = () => {
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
-
+    "MAILTRAP_SMTP_HOST",
+    "MAILTRAP_SMTP_PORT",
+    "MAILTRAP_SMTP_USER",
+    "MAILTRAP_SMTP_PASS",
   ];
 
   const missing = required.filter((key) => !process.env[key]);

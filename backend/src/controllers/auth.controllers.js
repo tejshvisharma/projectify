@@ -126,6 +126,7 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
     maxAge: 1000 * 60 * 15,
+    path: "/",
   };
 
   res.cookie("accessToken", accessToken, cookieOptions);
@@ -160,18 +161,20 @@ const logoutUser = asyncHandler(async (req, res) => {
 
   // Remove refresh token from DB
   await User.findByIdAndUpdate(userId, { $unset: { refreshToken: 1 } });
-
+  const isProd = process.env.NODE_ENV === "production";
   // Clear cookies
   res.clearCookie("accessToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 0,
   });
 
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 0,
   });
 
   return res
