@@ -20,7 +20,7 @@ export const setCSRFToken = (token: string | null) => {
 
 // Main API client WITH interceptors (for protected routes)
 export const apiClient = axios.create({
-    baseURL: "/api/v1",
+    baseURL: import.meta.env.VITE_API_BASE_URL,
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",
@@ -29,7 +29,7 @@ export const apiClient = axios.create({
 
 // Minimal client WITHOUT interceptors (for auth hydration only)
 export const authHydrationClient = axios.create({
-    baseURL: "/api/v1",
+    baseURL: import.meta.env.VITE_API_BASE_URL,
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",
