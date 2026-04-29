@@ -5,7 +5,9 @@ dotenv.config();
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => process.env.CSRF_SECRET,
 
-  getSessionIdentifier: (req) => `session-${req.ip}`,
+  getSessionIdentifier: (req) => {
+  return req.user?._id || req.cookies.accessToken || "global-session";
+},
 
   cookieName: "csrf-token",
   cookieOptions: {
