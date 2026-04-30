@@ -3,7 +3,7 @@ import Mailgen from "mailgen";
 import { Resend } from "resend";
 import dotenv from "dotenv";
 dotenv.config();
-
+import ApiError from "./api-error.js";
 const isProduction = process.env.NODE_ENV === "production";
 
 // ─── Resend Setup (PRODUCTION) ─────────────────────────────
@@ -42,7 +42,7 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
   try {
     if (isProduction) {
       // ✅ PRODUCTION → Resend
-      await resend.emails.send({
+      const { data : res, error } = await resend.emails.send({
         from: process.env.EMAIL_FROM, // MUST be verified domain
         to,
         subject,
@@ -51,12 +51,7 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
       });
 
       if (error) {
-        console.error(`❌ Email failed:`, error);
-        throw error;
-      } else {
-        
-        console.log(`✅ Email sent via Resend to ${to}`);
-        console.log(res);
+        throw new ApiError(500, "Failed to send email retry after few minutes.");
       }
     } else {
       // ✅ DEVELOPMENT → Mailtrap
@@ -71,8 +66,7 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
       console.log(`✅ Email sent via Mailtrap to ${to}`);
     }
   } catch (err) {
-    console.error(`❌ Email failed:`, err);
-    throw err;
+    throw new ApiError(500, "Failed to send email retry after few minutes.");
   }
 };
 
