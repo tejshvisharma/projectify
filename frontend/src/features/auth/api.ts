@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, authHydrationClient, setCSRFToken } from '@/lib/axios';
+import { apiClient, authHydrationClient, clearCsrfToken, setCSRFToken } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth.store';
 import { LoginPayload, RegisterPayload, UserProfile } from "./types";
 // Types
@@ -81,6 +81,7 @@ export const useLogoutMutation = () => {
         mutationFn: logout,
         onSuccess: () => {
             clearUser();
+            clearCsrfToken();
         },
     });
 };

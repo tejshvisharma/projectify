@@ -1,19 +1,27 @@
 import { doubleCsrf } from "csrf-csrf";
-import dotenv from "dotenv";
-dotenv.config();
+
+const isProd = process.env.NODE_ENV === "production";
 
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret: () => process.env.CSRF_SECRET,
+  getSecret: () => {
+    const secret = process.env.CSRF_SECRET;
+    if (!secret) throw new Error("CSRF_SECRET is not set");
+    return secret;
+  },
 
+  // ✅ THE FIX: refreshToken is present at both generation AND validation time.
+  // It doesn't depend on req.user, so middleware order doesn't matter.
+  // It's stable across the session (doesn't rotate every 15 min like accessToken).
   getSessionIdentifier: (req) => {
-  return req.user?._id || req.cookies.accessToken || "global-session";
-},
+    return req.cookies?.refreshToken ?? "anonymous";
+  },
 
   cookieName: "csrf-token",
   cookieOptions: {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    secure: true,
+    sameSite: isProd ? "none" : "lax",
+    secure: isProd, // ← was "true" hardcoded before, breaks localhost
+    path: "/",
   },
 
   size: 64,

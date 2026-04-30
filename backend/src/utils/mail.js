@@ -50,7 +50,14 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
         text: emailText,
       });
 
-      console.log(`✅ Email sent via Resend to ${to}`);
+      if (error) {
+        console.error(`❌ Email failed:`, error);
+        throw error;
+      } else {
+        
+        console.log(`✅ Email sent via Resend to ${to}`);
+        console.log(res);
+      }
     } else {
       // ✅ DEVELOPMENT → Mailtrap
       await transporter.sendMail({
@@ -90,7 +97,7 @@ const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
         "**If the button doesn't work**, copy and paste this URL into your browser:",
         passwordResetUrl,
         "",
-        "This password reset link will expire in 1 hour for security reasons.",
+        "This password reset link will expire in 20 minutes for security reasons.",
       ],
     },
   };

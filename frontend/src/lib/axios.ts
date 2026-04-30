@@ -14,6 +14,7 @@ export const setCSRFToken = (token: string | null) => {
     csrfToken = normalized.length > 0 ? normalized : null;
 };
 
+export function clearCsrfToken() { csrfToken = null; }
 /* ────────────────────────────────────────────────────────────────
    🌐 API CLIENTS
    ──────────────────────────────────────────────────────────────── */
