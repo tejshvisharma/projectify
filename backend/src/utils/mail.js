@@ -1,37 +1,23 @@
 import nodemailer from "nodemailer";
 import Mailgen from "mailgen";
-
+import { Resend } from "resend";
 import dotenv from "dotenv";
 dotenv.config();
 import ApiError from "./api-error.js";
-
-// ─── Nodemailer Setup (DEV → Mailtrap) ────────────────────────────────
 const isProduction = process.env.NODE_ENV === "production";
 
-// ─── Nodemailer Setup (DEV → Mailtrap) ────────────────────────────────
-const devTransporter = nodemailer.createTransport({
+// ─── Resend Setup (PRODUCTION) ─────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ─── Nodemailer Setup (DEV) ────────────────────────────────
+const transporter = nodemailer.createTransport({
   host: process.env.MAILTRAP_SMTP_HOST,
-  port: Number(process.env.MAILTRAP_SMTP_PORT),
+  port: process.env.MAILTRAP_SMTP_PORT,
   secure: false,
   auth: {
     user: process.env.MAILTRAP_SMTP_USER,
     pass: process.env.MAILTRAP_SMTP_PASS,
   },
-  connectionTimeout: 10000,
-  socketTimeout: 15000,
-});
-
-// ─── Nodemailer Setup (PROD → Gmail) ──────────────────────────────────
-const prodTransporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-  // ✅ Fix 3: Prevent infinite SMTP hang
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
 });
 
 // ─── Mailgen Setup ─────────────────────────────────────────
@@ -49,31 +35,41 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
     throw new Error("Please provide subject, recipient, and mailGenContent");
   }
 
+  // Generate HTML + TEXT
   const emailHtml = mailGenerator.generate(mailGenContent);
   const emailText = mailGenerator.generatePlaintext(mailGenContent);
 
-  const transporter = isProduction ? prodTransporter : devTransporter;
-  const from = isProduction
-    ? process.env.EMAIL_FROM
-    : `"KaryaDesk" <${process.env.MAILTRAP_SMTP_USER}>`;
-
   try {
-    await transporter.sendMail({
-      from,
-      to,
-      subject,
-      html: emailHtml,
-      text: emailText,
-    });
-    console.log(
-      `✅ Email sent to ${to} via ${isProduction ? "Gmail" : "Mailtrap"}`,
-    );
+    if (isProduction) {
+      // ✅ PRODUCTION → Resend
+      const { data: res, error } = await resend.emails.send({
+        from: process.env.EMAIL_FROM, // MUST be verified domain
+        to,
+        subject,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      if (error) {
+        throw new ApiError(
+          500,
+          "Failed to send email retry after few minutes.",
+        );
+      }
+    } else {
+      // ✅ DEVELOPMENT → Mailtrap
+      await transporter.sendMail({
+        from: `"KaryaDesk" <${process.env.MAILTRAP_SMTP_USER}>`,
+        to,
+        subject,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      console.log(`✅ Email sent via Mailtrap to ${to}`);
+    }
   } catch (err) {
-    console.error(`❌ Email send failed:`, err.message);
-    throw new ApiError(
-      500,
-      "Failed to send email, please retry after a few minutes.",
-    );
+    throw new ApiError(500, "Failed to send email retry after few minutes.");
   }
 };
 
