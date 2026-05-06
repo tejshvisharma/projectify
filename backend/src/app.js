@@ -48,6 +48,7 @@ app.use(
 // ─── 3. CORS ──────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_WWW,
   ...(!isProduction ? ["http://localhost:5173", "http://localhost:3000"] : []),
 ].filter(Boolean);
 
