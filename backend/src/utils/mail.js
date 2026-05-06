@@ -4,26 +4,34 @@ import Mailgen from "mailgen";
 import dotenv from "dotenv";
 dotenv.config();
 import ApiError from "./api-error.js";
-const isProduction = true;
+
+// ─── Nodemailer Setup (DEV → Mailtrap) ────────────────────────────────
+const isProduction = process.env.NODE_ENV === "production";
 
 // ─── Nodemailer Setup (DEV → Mailtrap) ────────────────────────────────
 const devTransporter = nodemailer.createTransport({
   host: process.env.MAILTRAP_SMTP_HOST,
-  port: process.env.MAILTRAP_SMTP_PORT,
+  port: Number(process.env.MAILTRAP_SMTP_PORT),
   secure: false,
   auth: {
     user: process.env.MAILTRAP_SMTP_USER,
     pass: process.env.MAILTRAP_SMTP_PASS,
   },
+  connectionTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 // ─── Nodemailer Setup (PROD → Gmail) ──────────────────────────────────
 const prodTransporter = nodemailer.createTransport({
-  service: "gmail", // nodemailer knows Gmail's SMTP settings automatically
+  service: "gmail",
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD,
   },
+  // ✅ Fix 3: Prevent infinite SMTP hang
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 // ─── Mailgen Setup ─────────────────────────────────────────
@@ -61,7 +69,6 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
       `✅ Email sent to ${to} via ${isProduction ? "Gmail" : "Mailtrap"}`,
     );
   } catch (err) {
-    // Log the real error so you can debug — never swallow it silently
     console.error(`❌ Email send failed:`, err.message);
     throw new ApiError(
       500,
