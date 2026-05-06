@@ -1,16 +1,13 @@
 import nodemailer from "nodemailer";
 import Mailgen from "mailgen";
-import { Resend } from "resend";
+
 import dotenv from "dotenv";
 dotenv.config();
 import ApiError from "./api-error.js";
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = true;
 
-// ─── Resend Setup (PRODUCTION) ─────────────────────────────
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// ─── Nodemailer Setup (DEV) ────────────────────────────────
-const transporter = nodemailer.createTransport({
+// ─── Nodemailer Setup (DEV → Mailtrap) ────────────────────────────────
+const devTransporter = nodemailer.createTransport({
   host: process.env.MAILTRAP_SMTP_HOST,
   port: process.env.MAILTRAP_SMTP_PORT,
   secure: false,
@@ -20,12 +17,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// ─── Nodemailer Setup (PROD → Gmail) ──────────────────────────────────
+const prodTransporter = nodemailer.createTransport({
+  service: "gmail", // nodemailer knows Gmail's SMTP settings automatically
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
+
 // ─── Mailgen Setup ─────────────────────────────────────────
 const mailGenerator = new Mailgen({
   theme: "default",
   product: {
     name: "KaryaDesk App",
-    link: `http://localhost:${process.env.PORT}/`,
+    link: process.env.FRONTEND_URL,
   },
 });
 
@@ -35,38 +41,32 @@ const sendEmail = async ({ subject, to, mailGenContent }) => {
     throw new Error("Please provide subject, recipient, and mailGenContent");
   }
 
-  // Generate HTML + TEXT
   const emailHtml = mailGenerator.generate(mailGenContent);
   const emailText = mailGenerator.generatePlaintext(mailGenContent);
 
+  const transporter = isProduction ? prodTransporter : devTransporter;
+  const from = isProduction
+    ? process.env.EMAIL_FROM
+    : `"KaryaDesk" <${process.env.MAILTRAP_SMTP_USER}>`;
+
   try {
-    if (isProduction) {
-      // ✅ PRODUCTION → Resend
-      const { data : res, error } = await resend.emails.send({
-        from: process.env.EMAIL_FROM, // MUST be verified domain
-        to,
-        subject,
-        html: emailHtml,
-        text: emailText,
-      });
-
-      if (error) {
-        throw new ApiError(500, "Failed to send email retry after few minutes.");
-      }
-    } else {
-      // ✅ DEVELOPMENT → Mailtrap
-      await transporter.sendMail({
-        from: `"KaryaDesk" <${process.env.MAILTRAP_SMTP_USER}>`,
-        to,
-        subject,
-        html: emailHtml,
-        text: emailText,
-      });
-
-      console.log(`✅ Email sent via Mailtrap to ${to}`);
-    }
+    await transporter.sendMail({
+      from,
+      to,
+      subject,
+      html: emailHtml,
+      text: emailText,
+    });
+    console.log(
+      `✅ Email sent to ${to} via ${isProduction ? "Gmail" : "Mailtrap"}`,
+    );
   } catch (err) {
-    throw new ApiError(500, "Failed to send email retry after few minutes.");
+    // Log the real error so you can debug — never swallow it silently
+    console.error(`❌ Email send failed:`, err.message);
+    throw new ApiError(
+      500,
+      "Failed to send email, please retry after a few minutes.",
+    );
   }
 };
 
@@ -87,12 +87,6 @@ const forgetPasswordMailGenContent = (username, passwordResetUrl) => {
           link: passwordResetUrl,
         },
       },
-      outro: [
-        "**If the button doesn't work**, copy and paste this URL into your browser:",
-        passwordResetUrl,
-        "",
-        "This password reset link will expire in 20 minutes for security reasons.",
-      ],
     },
   };
 };
@@ -110,10 +104,6 @@ const emailVerificationMailGenContent = (username, emailVerificationUrl) => {
           link: emailVerificationUrl,
         },
       },
-      outro: [
-        "**If the button doesn't work**, copy and paste this URL into your browser:",
-        emailVerificationUrl,
-      ],
       signature: false,
     },
     footer: {
